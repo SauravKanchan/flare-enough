@@ -1,4 +1,4 @@
-export type TimelineType = 'trumpWins' | 'trumpLoses';
+export type TimelineType = 'rateHike' | 'rateHold' | 'btcUp' | 'btcDown' | 'trumpWins' | 'trumpLoses';
 
 export type EventType = {
   id: string;
