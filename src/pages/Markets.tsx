@@ -4,6 +4,7 @@ import TimelineSelector from '../components/ui/TimelineSelector';
 import { events } from '../data/mockData';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import Card from '../components/ui/Card';
+// import Button from '../components/ui/Button';
 import TradeModal from '../components/ui/TradeModal';
 import { OptionType } from '../types';
 
@@ -39,21 +40,12 @@ const Markets: React.FC = () => {
               {events.map((event) => (
                 <Card 
                   key={event.id}
-                  className={`w-full transition-all duration-200 ${
-                    selectedEvent?.id === event.id 
-                      ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-900' 
-                      : 'hover:bg-accent/50'
-                  }`}
+                  className={`w-full ${selectedEvent?.id === event.id ? 'border-2 border-primary' : ''}`}
+                  hover={true}
                   onClick={() => selectEvent(event.id)}
                 >
                   <div className="p-4">
-                    <h3 className={`font-medium ${
-                      selectedEvent?.id === event.id 
-                        ? 'text-primary' 
-                        : 'text-card-foreground'
-                    }`}>
-                      {event.name}
-                    </h3>
+                    <h3 className="font-medium text-card-foreground">{event.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       {new Date(event.date).toLocaleDateString()}
                     </p>
