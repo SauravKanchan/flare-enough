@@ -3,6 +3,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useWallet } from '../../context/WalletContext';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import Button from '../ui/Button';
+import Dialog from '../ui/Dialog';
 
 type HeaderProps = {
   setActivePage: (page: 'home' | 'markets' | 'events') => void;
@@ -11,8 +12,9 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
   const { theme, toggleTheme } = useTheme();
-  const { isConnected, address, connectWallet } = useWallet();
+  const { isConnected, address, connectWallet, disconnectWallet } = useWallet();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -20,6 +22,14 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const handleWalletClick = () => {
+    if (isConnected) {
+      setShowDisconnectDialog(true);
+    } else {
+      connectWallet();
+    }
   };
   
   return (
@@ -70,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
             {/* Connect wallet button */}
             <Button 
               className="ml-4 hidden sm:block"
-              onClick={connectWallet}
+              onClick={handleWalletClick}
             >
               {isConnected ? formatAddress(address!) : 'Connect Wallet'}
             </Button>
@@ -119,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
             <div className="pt-4">
               <Button 
                 className="w-full"
-                onClick={connectWallet}
+                onClick={handleWalletClick}
               >
                 {isConnected ? formatAddress(address!) : 'Connect Wallet'}
               </Button>
@@ -127,6 +137,17 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
           </div>
         </div>
       )}
+
+      {/* Disconnect Dialog */}
+      <Dialog
+        isOpen={showDisconnectDialog}
+        onClose={() => setShowDisconnectDialog(false)}
+        onConfirm={disconnectWallet}
+        title="Disconnect Wallet"
+        description="Are you sure you want to disconnect your wallet?"
+        confirmText="Disconnect"
+        cancelText="Cancel"
+      />
     </header>
   );
 };
