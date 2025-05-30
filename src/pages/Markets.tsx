@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useMarket } from '../context/MarketContext';
 import TimelineSelector from '../components/ui/TimelineSelector';
 import { events } from '../data/mockData';
-import { AlertCircle, ArrowUpDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
+// import Button from '../components/ui/Button';
 import TradeModal from '../components/ui/TradeModal';
 import { OptionType } from '../types';
 
