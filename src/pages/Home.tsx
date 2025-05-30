@@ -4,14 +4,21 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { events } from '../data/mockData';
 import { getTimelineLabel } from '../utils/general';
+import { useMarket } from '../context/MarketContext';
 
 type HeaderProps = {
   setActivePage: (page: 'home' | 'markets' | 'events') => void;
 };
 
 const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
-  // Get the first 3 active events for featured markets
+  const { selectEvent, selectTimeline } = useMarket();
   const featuredEvents = events.filter(event => !event.resolved).slice(0, 3);
+
+  const handleTimelineClick = (eventId: string, timeline: string) => {
+    selectEvent(eventId);
+    selectTimeline(timeline);
+    setActivePage('markets');
+  };
 
   return (
     <div className="flex flex-col">
@@ -158,7 +165,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
                 date={new Date(event.date).toLocaleDateString()}
                 active={!event.resolved}
                 timelines={event.timelines}
-                onTimelineClick={() => setActivePage('markets')}
+                onTimelineClick={(timeline) => handleTimelineClick(event.id, timeline)}
               />
             ))}
           </div>
@@ -223,7 +230,7 @@ type MarketCardProps = {
   date: string;
   active: boolean;
   timelines: string[];
-  onTimelineClick: () => void;
+  onTimelineClick: (timeline: string) => void;
 };
 
 const MarketCard: React.FC<MarketCardProps> = ({ 
@@ -257,7 +264,7 @@ const MarketCard: React.FC<MarketCardProps> = ({
               key={index}
               variant="primary"
               className="w-full"
-              onClick={onTimelineClick}
+              onClick={() => onTimelineClick(timeline)}
             >
               {getTimelineLabel(timeline)}
             </Button>
