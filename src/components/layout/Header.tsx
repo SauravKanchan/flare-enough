@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { useWallet } from '../../context/WalletContext';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import Button from '../ui/Button';
 
@@ -10,10 +11,15 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
   const { theme, toggleTheme } = useTheme();
+  const { isConnected, address, connectWallet } = useWallet();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
   
   return (
@@ -23,10 +29,12 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-indigo-500 to-teal-400 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-black to-gray-800 flex items-center justify-center">
                 <span className="text-white font-bold text-lg">F</span>
               </div>
-              <span className="ml-3 text-xl font-bold text-gray-900 dark:text-white" onClick={()=>setActivePage('home')}>FlareEnough</span>
+              <span className="ml-3 text-xl font-bold text-gray-900 dark:text-white cursor-pointer" onClick={() => setActivePage('home')}>
+                FlareEnough
+              </span>
             </div>
           </div>
           
@@ -60,8 +68,11 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
             </button>
             
             {/* Connect wallet button */}
-            <Button className="ml-4 hidden sm:block">
-              Connect Wallet
+            <Button 
+              className="ml-4 hidden sm:block"
+              onClick={connectWallet}
+            >
+              {isConnected ? formatAddress(address!) : 'Connect Wallet'}
             </Button>
             
             {/* Mobile menu button */}
@@ -106,8 +117,11 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
               }}
             />
             <div className="pt-4">
-              <Button className="w-full">
-                Connect Wallet
+              <Button 
+                className="w-full"
+                onClick={connectWallet}
+              >
+                {isConnected ? formatAddress(address!) : 'Connect Wallet'}
               </Button>
             </div>
           </div>
@@ -129,7 +143,7 @@ const NavItem: React.FC<NavItemProps> = ({ label, isActive, onClick }) => {
       onClick={onClick}
       className={`px-3 py-2 text-sm font-medium transition-colors duration-200 ${
         isActive 
-          ? 'text-indigo-600 dark:text-indigo-400' 
+          ? 'text-primary dark:text-primary' 
           : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
       }`}
     >
@@ -144,7 +158,7 @@ const MobileNavItem: React.FC<NavItemProps> = ({ label, isActive, onClick }) => 
       onClick={onClick}
       className={`block px-3 py-2 text-base font-medium rounded-md w-full text-left ${
         isActive 
-          ? 'bg-indigo-50 text-indigo-600 dark:bg-gray-800 dark:text-indigo-400' 
+          ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary' 
           : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800'
       }`}
     >
