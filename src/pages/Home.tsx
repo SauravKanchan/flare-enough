@@ -12,18 +12,6 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
   // Get the first 3 active events for featured markets
   const featuredEvents = events.filter(event => !event.resolved).slice(0, 3);
 
-  const getTimelineLabel = (timeline: string) => {
-    switch (timeline) {
-      case 'trumpWins': return 'Trump Wins';
-      case 'trumpLoses': return 'Trump Loses';
-      case 'rateHike': return 'Rate Hike';
-      case 'rateHold': return 'Rate Hold';
-      case 'btcUp': return 'BTC Up';
-      case 'btcDown': return 'BTC Down';
-      default: return timeline;
-    }
-  };
-
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
