@@ -10,6 +10,30 @@ const TimelineSelector: React.FC = () => {
   if (!selectedEvent) {
     return null;
   }
+
+  const getTimelineLabel = (timeline: TimelineType) => {
+    switch (timeline) {
+      case 'trumpWins': return 'Trump Wins';
+      case 'trumpLoses': return 'Trump Loses';
+      case 'rateHike': return 'Rate Hike';
+      case 'rateHold': return 'Rate Hold';
+      case 'btcUp': return 'BTC Up';
+      case 'btcDown': return 'BTC Down';
+      default: return timeline;
+    }
+  };
+
+  const getTimelineDescription = (timeline: TimelineType) => {
+    switch (timeline) {
+      case 'trumpWins': return 'Options that execute only if Trump wins the election';
+      case 'trumpLoses': return 'Options that execute only if Trump loses the election';
+      case 'rateHike': return 'Options that execute only if FED increases rates';
+      case 'rateHold': return 'Options that execute only if FED maintains current rates';
+      case 'btcUp': return 'Options that execute only if BTC price increases post-halving';
+      case 'btcDown': return 'Options that execute only if BTC price decreases post-halving';
+      default: return 'Options for this timeline';
+    }
+  };
   
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
@@ -37,6 +61,8 @@ const TimelineSelector: React.FC = () => {
           <TimelineButton
             key={timeline}
             timeline={timeline}
+            label={getTimelineLabel(timeline)}
+            description={getTimelineDescription(timeline)}
             isSelected={selectedTimeline === timeline}
             onClick={() => selectTimeline(timeline)}
           />
@@ -48,20 +74,18 @@ const TimelineSelector: React.FC = () => {
 
 type TimelineButtonProps = {
   timeline: TimelineType;
+  label: string;
+  description: string;
   isSelected: boolean;
   onClick: () => void;
 };
 
 const TimelineButton: React.FC<TimelineButtonProps> = ({
-  timeline,
+  label,
+  description,
   isSelected,
   onClick,
 }) => {
-  const label = timeline === 'trumpWins' ? 'If Trump Wins' : 'If Trump Loses';
-  const description = timeline === 'trumpWins' 
-    ? 'Options that execute only if Trump wins the election'
-    : 'Options that execute only if Trump loses the election';
-  
   return (
     <Tooltip content={description}>
       <button
