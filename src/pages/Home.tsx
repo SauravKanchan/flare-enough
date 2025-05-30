@@ -12,6 +12,18 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
   // Get the first 3 active events for featured markets
   const featuredEvents = events.filter(event => !event.resolved).slice(0, 3);
 
+  const getTimelineLabel = (timeline: string) => {
+    switch (timeline) {
+      case 'trumpWins': return 'Trump Wins';
+      case 'trumpLoses': return 'Trump Loses';
+      case 'rateHike': return 'Rate Hike';
+      case 'rateHold': return 'Rate Hold';
+      case 'btcUp': return 'BTC Up';
+      case 'btcDown': return 'BTC Down';
+      default: return timeline;
+    }
+  };
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -156,6 +168,8 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
                 description={event.description}
                 date={new Date(event.date).toLocaleDateString()}
                 active={!event.resolved}
+                timelines={event.timelines}
+                onTimelineClick={() => setActivePage('markets')}
               />
             ))}
           </div>
@@ -219,9 +233,30 @@ type MarketCardProps = {
   description: string;
   date: string;
   active: boolean;
+  timelines: string[];
+  onTimelineClick: () => void;
 };
 
-const MarketCard: React.FC<MarketCardProps> = ({ title, description, date, active }) => {
+const MarketCard: React.FC<MarketCardProps> = ({ 
+  title, 
+  description, 
+  date, 
+  active,
+  timelines,
+  onTimelineClick
+}) => {
+  const getTimelineLabel = (timeline: string) => {
+    switch (timeline) {
+      case 'trumpWins': return 'Trump Wins';
+      case 'trumpLoses': return 'Trump Loses';
+      case 'rateHike': return 'Rate Hike';
+      case 'rateHold': return 'Rate Hold';
+      case 'btcUp': return 'BTC Up';
+      case 'btcDown': return 'BTC Down';
+      default: return timeline;
+    }
+  };
+
   return (
     <Card hover className="overflow-hidden">
       <div className="h-2 bg-gradient-to-r from-black to-gray-800"></div>
@@ -240,20 +275,16 @@ const MarketCard: React.FC<MarketCardProps> = ({ title, description, date, activ
           <span>Event date: {date}</span>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="primary"
-            className="w-full"
-            onClick={() => window.location.href = '/markets?timeline=trumpWins'}
-          >
-            Trump Wins
-          </Button>
-          <Button 
-            variant="primary"
-            className="w-full"
-            onClick={() => window.location.href = '/markets?timeline=trumpLoses'}
-          >
-            Trump Loses
-          </Button>
+          {timelines.map((timeline, index) => (
+            <Button 
+              key={index}
+              variant="primary"
+              className="w-full"
+              onClick={onTimelineClick}
+            >
+              {getTimelineLabel(timeline)}
+            </Button>
+          ))}
         </div>
       </div>
     </Card>
