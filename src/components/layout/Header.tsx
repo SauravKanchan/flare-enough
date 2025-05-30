@@ -26,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
               <div className="h-10 w-10 rounded-full bg-gradient-to-r from-indigo-500 to-teal-400 flex items-center justify-center">
                 <span className="text-white font-bold text-lg">F</span>
               </div>
-              <span className="ml-3 text-xl font-bold text-gray-900 dark:text-white">FlareEnough</span>
+              <span className="ml-3 text-xl font-bold text-gray-900 dark:text-white" onClick={()=>setActivePage('home')}>FlareEnough</span>
             </div>
           </div>
           
