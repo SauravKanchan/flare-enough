@@ -10,6 +10,18 @@ const Events: React.FC = () => {
   const activeEvents = events.filter(event => !event.resolved);
   const resolvedEvents = events.filter(event => event.resolved);
   
+  const getTimelineLabel = (timeline: string) => {
+    switch (timeline) {
+      case 'trumpWins': return 'Trump Wins';
+      case 'trumpLoses': return 'Trump Loses';
+      case 'rateHike': return 'Rate Hike';
+      case 'rateHold': return 'Rate Hold';
+      case 'btcUp': return 'BTC Up';
+      case 'btcDown': return 'BTC Down';
+      default: return timeline;
+    }
+  };
+  
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -26,7 +38,7 @@ const Events: React.FC = () => {
           <div>
             <h3 className="text-indigo-800 dark:text-indigo-200 font-medium mb-1">How Events Work</h3>
             <p className="text-indigo-700 dark:text-indigo-300 text-sm">
-              TimelineDEX options are conditional on real-world events. Each event creates multiple possible timelines.
+              FlareEnough options are conditional on real-world events. Each event creates multiple possible timelines.
               When an event resolves, only the options on the correct timeline will be executed - all others are refunded.
             </p>
           </div>
@@ -38,7 +50,11 @@ const Events: React.FC = () => {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Active Events</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activeEvents.map(event => (
-            <DetailedEventCard key={event.id} event={event} />
+            <DetailedEventCard 
+              key={event.id} 
+              event={event} 
+              getTimelineLabel={getTimelineLabel}
+            />
           ))}
         </div>
       </section>
@@ -49,7 +65,11 @@ const Events: React.FC = () => {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Resolved Events</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {resolvedEvents.map(event => (
-              <DetailedEventCard key={event.id} event={event} />
+              <DetailedEventCard 
+                key={event.id} 
+                event={event} 
+                getTimelineLabel={getTimelineLabel}
+              />
             ))}
           </div>
         </section>
@@ -60,15 +80,16 @@ const Events: React.FC = () => {
 
 type DetailedEventCardProps = {
   event: EventType;
+  getTimelineLabel: (timeline: string) => string;
 };
 
-const DetailedEventCard: React.FC<DetailedEventCardProps> = ({ event }) => {
+const DetailedEventCard: React.FC<DetailedEventCardProps> = ({ event, getTimelineLabel }) => {
   const eventDate = new Date(event.date);
   const timeToEvent = formatDistanceToNow(eventDate);
   
   return (
     <Card className="overflow-hidden">
-      <div className="h-2 bg-gradient-to-r from-indigo-500 to-teal-400"></div>
+      <div className="h-2 bg-gradient-to-r from-black to-gray-800"></div>
       <div className="p-6">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{event.name}</h3>
@@ -103,7 +124,7 @@ const DetailedEventCard: React.FC<DetailedEventCardProps> = ({ event }) => {
                     : 'bg-gray-400 dark:bg-gray-500'
                 }`}></div>
                 <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {timeline === 'trumpWins' ? 'Trump Wins' : 'Trump Loses'}
+                  {getTimelineLabel(timeline)}
                   {event.resolved && event.outcome === timeline && (
                     <span className="ml-2 text-green-600 dark:text-green-400">(Occurred)</span>
                   )}
