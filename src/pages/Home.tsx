@@ -32,7 +32,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
           <div className="md:flex md:items-center md:justify-between">
             <div className="md:w-1/2 mb-8 md:mb-0">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-                Trade Options Across <span className="text-gray-300">Multiple Timelines</span>
+                FlareEnough <span className="text-gray-300"></span>
               </h1>
               <p className="text-gray-300 text-lg mb-8 max-w-xl">
                 The first options DEX that lets you trade based on conditional real-world events. 
