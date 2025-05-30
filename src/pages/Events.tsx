@@ -8,7 +8,11 @@ import { formatDistanceToNow } from '../utils/formatters';
 import { getTimelineLabel } from '../utils/general';
 import { useMarket } from '../context/MarketContext';
 
-const Events: React.FC = () => {
+type HeaderProps = {
+  setActivePage: (page: 'home' | 'markets' | 'events') => void;
+};
+
+const Events: React.FC<HeaderProps> = ({ setActivePage }) => {
   const { selectEvent, selectTimeline } = useMarket();
   const activeEvents = events.filter(event => !event.resolved);
   const resolvedEvents = events.filter(event => event.resolved);
@@ -16,6 +20,7 @@ const Events: React.FC = () => {
   const handleTimelineClick = (eventId: string, timeline: string) => {
     selectEvent(eventId);
     selectTimeline(timeline);
+    setActivePage('markets');
   };
   
   return (
