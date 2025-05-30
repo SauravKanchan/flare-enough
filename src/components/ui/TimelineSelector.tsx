@@ -3,6 +3,7 @@ import { TimelineType } from '../../types';
 import { useMarket } from '../../context/MarketContext';
 import { Clock, ArrowRightLeft } from 'lucide-react';
 import Tooltip from './Tooltip';
+import { getTimelineLabel } from '../../utils/general';
 
 const TimelineSelector: React.FC = () => {
   const { selectedEvent, selectedTimeline, selectTimeline } = useMarket();
@@ -10,18 +11,6 @@ const TimelineSelector: React.FC = () => {
   if (!selectedEvent) {
     return null;
   }
-
-  const getTimelineLabel = (timeline: TimelineType) => {
-    switch (timeline) {
-      case 'trumpWins': return 'Trump Wins';
-      case 'trumpLoses': return 'Trump Loses';
-      case 'rateHike': return 'Rate Hike';
-      case 'rateHold': return 'Rate Hold';
-      case 'btcUp': return 'BTC Up';
-      case 'btcDown': return 'BTC Down';
-      default: return timeline;
-    }
-  };
 
   const getTimelineDescription = (timeline: TimelineType) => {
     switch (timeline) {

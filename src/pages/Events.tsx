@@ -5,24 +5,13 @@ import { events } from '../data/mockData';
 import { Calendar, Clock, AlertTriangle } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { formatDistanceToNow } from '../utils/formatters';
+import { getTimelineLabel } from '../utils/general';
 import { useMarket } from '../context/MarketContext';
 
 const Events: React.FC = () => {
   const { selectEvent, selectTimeline } = useMarket();
   const activeEvents = events.filter(event => !event.resolved);
   const resolvedEvents = events.filter(event => event.resolved);
-  
-  const getTimelineLabel = (timeline: string) => {
-    switch (timeline) {
-      case 'trumpWins': return 'Trump Wins';
-      case 'trumpLoses': return 'Trump Loses';
-      case 'rateHike': return 'Rate Hike';
-      case 'rateHold': return 'Rate Hold';
-      case 'btcUp': return 'BTC Up';
-      case 'btcDown': return 'BTC Down';
-      default: return timeline;
-    }
-  };
 
   const handleTimelineClick = (eventId: string, timeline: string) => {
     selectEvent(eventId);
@@ -61,7 +50,6 @@ const Events: React.FC = () => {
               key={event.id}
               event={event}
               onTimelineClick={handleTimelineClick}
-              getTimelineLabel={getTimelineLabel}
             />
           ))}
         </div>
@@ -77,7 +65,6 @@ const Events: React.FC = () => {
                 key={event.id}
                 event={event}
                 onTimelineClick={handleTimelineClick}
-                getTimelineLabel={getTimelineLabel}
               />
             ))}
           </div>
@@ -90,13 +77,11 @@ const Events: React.FC = () => {
 type MarketCardProps = {
   event: EventType;
   onTimelineClick: (eventId: string, timeline: string) => void;
-  getTimelineLabel: (timeline: string) => string;
 };
 
 const MarketCard: React.FC<MarketCardProps> = ({ 
   event,
-  onTimelineClick,
-  getTimelineLabel
+  onTimelineClick
 }) => {
   const eventDate = new Date(event.date);
   const timeToEvent = formatDistanceToNow(eventDate);

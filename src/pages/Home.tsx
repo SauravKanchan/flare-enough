@@ -3,6 +3,7 @@ import { ArrowRight, Clock, LineChart, Lock, RefreshCw, Layers } from 'lucide-re
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { events } from '../data/mockData';
+import { getTimelineLabel } from '../utils/general';
 
 type HeaderProps = {
   setActivePage: (page: 'home' | 'markets' | 'events') => void;
@@ -233,18 +234,6 @@ const MarketCard: React.FC<MarketCardProps> = ({
   timelines,
   onTimelineClick
 }) => {
-  const getTimelineLabel = (timeline: string) => {
-    switch (timeline) {
-      case 'trumpWins': return 'Trump Wins';
-      case 'trumpLoses': return 'Trump Loses';
-      case 'rateHike': return 'Rate Hike';
-      case 'rateHold': return 'Rate Hold';
-      case 'btcUp': return 'BTC Up';
-      case 'btcDown': return 'BTC Down';
-      default: return timeline;
-    }
-  };
-
   return (
     <Card hover className="overflow-hidden">
       <div className="h-2 bg-gradient-to-r from-black to-gray-800"></div>
