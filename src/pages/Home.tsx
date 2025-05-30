@@ -15,14 +15,14 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[#c10f45] to-[#d4204c] dark:from-[#8f0b32] dark:to-[#a11839]">
+      <section className="bg-gradient-to-r from-black to-gray-900 dark:from-black dark:to-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="md:flex md:items-center md:justify-between">
             <div className="md:w-1/2 mb-8 md:mb-0">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-                Trade Options Across <span className="text-teal-300">Multiple Timelines</span>
+                Trade Options Across <span className="text-gray-300">Multiple Timelines</span>
               </h1>
-              <p className="text-pink-100 text-lg mb-8 max-w-xl">
+              <p className="text-gray-300 text-lg mb-8 max-w-xl">
                 The first options DEX that lets you trade based on conditional real-world events. 
                 Place bets on what happens if Trump wins or loses, and only pay if your timeline comes true.
               </p>
@@ -46,7 +46,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <div className="w-full max-w-md relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-teal-400 to-[#c10f45] rounded-xl transform rotate-3 scale-105 opacity-20 blur-lg"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 to-black rounded-xl transform rotate-3 scale-105 opacity-20 blur-lg"></div>
                 <div className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 shadow-xl">
                   <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center">
@@ -55,7 +55,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
                       </div>
                       <div className="ml-3">
                         <div className="text-white font-semibold">US Election 2024</div>
-                        <div className="text-xs text-pink-200">Ends in 127 days</div>
+                        <div className="text-xs text-gray-300">Ends in 127 days</div>
                       </div>
                     </div>
                     <div className="px-3 py-1 bg-white/10 rounded-full text-xs text-white">Active</div>
@@ -70,7 +70,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
                           </div>
                           <div className="ml-2 text-white">$50,000</div>
                         </div>
-                        <div className="text-sm text-pink-200">
+                        <div className="text-sm text-gray-300">
                           If Trump Wins
                         </div>
                       </div>
@@ -84,7 +84,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
                           </div>
                           <div className="ml-2 text-white">$42,000</div>
                         </div>
-                        <div className="text-sm text-pink-200">
+                        <div className="text-sm text-gray-300">
                           If Trump Loses
                         </div>
                       </div>
@@ -95,7 +95,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
                     <button className="px-4 py-2 bg-white/10 hover:bg-white/20 transition-colors rounded-lg text-white text-sm">
                       Explore
                     </button>
-                    <button className="px-4 py-2 bg-teal-500 hover:bg-teal-600 transition-colors rounded-lg text-white text-sm font-medium">
+                    <button className="px-4 py-2 bg-black hover:bg-gray-900 transition-colors rounded-lg text-white text-sm font-medium">
                       Trade Now
                     </button>
                   </div>
@@ -163,12 +163,12 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
       </section>
       
       {/* CTA Section */}
-      <section className="bg-[#c10f45] dark:bg-[#8f0b32]">
+      <section className="bg-black dark:bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="mb-6 md:mb-0">
               <h2 className="text-2xl md:text-3xl font-bold text-white">Ready to trade on multiple timelines?</h2>
-              <p className="text-pink-100 mt-2">
+              <p className="text-gray-300 mt-2">
                 Get started with FlareEnough today and explore event-based options trading.
               </p>
             </div>
@@ -205,7 +205,7 @@ type FeatureCardProps = {
 const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) => {
   return (
     <Card className="p-6">
-      <div className="w-12 h-12 rounded-lg bg-pink-100 dark:bg-pink-900/50 flex items-center justify-center text-[#c10f45] dark:text-pink-400 mb-4">
+      <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-black dark:text-white mb-4">
         {icon}
       </div>
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
@@ -224,7 +224,7 @@ type MarketCardProps = {
 const MarketCard: React.FC<MarketCardProps> = ({ title, description, date, active }) => {
   return (
     <Card hover className="overflow-hidden">
-      <div className="h-2 bg-gradient-to-r from-[#c10f45] to-teal-400"></div>
+      <div className="h-2 bg-gradient-to-r from-black to-gray-800"></div>
       <div className="p-6">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
@@ -238,16 +238,6 @@ const MarketCard: React.FC<MarketCardProps> = ({ title, description, date, activ
         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
           <Clock size={16} className="mr-2" />
           <span>Event date: {date}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded text-center">
-            <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Timeline 1</span>
-            <span className="font-medium text-gray-900 dark:text-white">Trump Wins</span>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded text-center">
-            <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Timeline 2</span>
-            <span className="font-medium text-gray-900 dark:text-white">Trump Loses</span>
-          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Button 
