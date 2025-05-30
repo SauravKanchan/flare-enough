@@ -6,9 +6,10 @@ import { TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
 import Card from '../components/ui/Card';
 import TradeModal from '../components/ui/TradeModal';
 import { OptionType } from '../types';
+import Button from '../components/ui/Button';
 
 const Markets: React.FC = () => {
-  const { selectedEvent, selectedTimeline, activeOptions, selectEvent } = useMarket();
+  const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline } = useMarket();
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -21,55 +22,83 @@ const Markets: React.FC = () => {
     setSelectedOption(option);
     setIsTradeModalOpen(true);
   };
+
+  const getTimelineLabel = (timeline: string) => {
+    switch (timeline) {
+      case 'trumpWins': return 'Trump Wins';
+      case 'trumpLoses': return 'Trump Loses';
+      case 'rateHike': return 'Rate Hike';
+      case 'rateHold': return 'Rate Hold';
+      case 'btcUp': return 'BTC Up';
+      case 'btcDown': return 'BTC Down';
+      default: return timeline;
+    }
+  };
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Event Selector Dropdown */}
+      {/* Event Selector and Timeline Buttons */}
       <div className="mb-6">
-        <div className="relative">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full md:w-96 bg-card text-card-foreground px-4 py-3 rounded-lg shadow-md flex items-center justify-between border border-border hover:border-primary transition-colors"
-          >
-            <span className="font-medium">
-              {selectedEvent ? selectedEvent.name : 'Select an Event'}
-            </span>
-            <ChevronDown 
-              size={20} 
-              className={`text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
-          
-          {isDropdownOpen && (
-            <div className="absolute z-10 w-full md:w-96 mt-2 bg-card border border-border rounded-lg shadow-lg">
-              {events.map((event) => (
-                <button
-                  key={event.id}
-                  className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors ${
-                    selectedEvent?.id === event.id ? 'bg-accent' : ''
-                  }`}
-                  onClick={() => {
-                    selectEvent(event.id);
-                    setIsDropdownOpen(false);
-                  }}
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Event Selector Dropdown */}
+          <div className="relative flex-grow">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full bg-card text-card-foreground px-4 py-3 rounded-lg shadow-md flex items-center justify-between border border-border hover:border-primary transition-colors"
+            >
+              <span className="font-medium">
+                {selectedEvent ? selectedEvent.name : 'Select an Event'}
+              </span>
+              <ChevronDown 
+                size={20} 
+                className={`text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="absolute z-10 w-full mt-2 bg-card border border-border rounded-lg shadow-lg">
+                {events.map((event) => (
+                  <button
+                    key={event.id}
+                    className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors ${
+                      selectedEvent?.id === event.id ? 'bg-accent' : ''
+                    }`}
+                    onClick={() => {
+                      selectEvent(event.id);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <div className="font-medium text-card-foreground">{event.name}</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {new Date(event.date).toLocaleDateString()}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Timeline Buttons */}
+          {selectedEvent && (
+            <div className="flex gap-2">
+              {selectedEvent.timelines.map((timeline) => (
+                <Button
+                  key={timeline}
+                  variant={selectedTimeline === timeline ? 'primary' : 'outline'}
+                  onClick={() => selectTimeline(timeline)}
+                  className="whitespace-nowrap"
                 >
-                  <div className="font-medium text-card-foreground">{event.name}</div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {new Date(event.date).toLocaleDateString()}
-                  </div>
-                </button>
+                  {getTimelineLabel(timeline)}
+                </Button>
               ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Timeline and Order Book */}
+      {/* Order Book */}
       {selectedEvent && selectedTimeline ? (
-        <>
-          <TimelineSelector />
-          
-          {/* Order Book */}
+        <div className="space-y-6">
           <div className="bg-card rounded-lg shadow-md p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-card-foreground">
@@ -171,7 +200,15 @@ const Markets: React.FC = () => {
               </table>
             </div>
           </div>
-        </>
+
+          {/* Conditional Trading Info */}
+          <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-4">
+            <p className="text-sm text-indigo-700 dark:text-indigo-300">
+              Trading on a conditional timeline means your trades only execute if that specific outcome occurs.
+              If another outcome happens, all collateral and premiums are automatically refunded.
+            </p>
+          </div>
+        </div>
       ) : (
         <div className="bg-card rounded-lg shadow-md p-8 text-center">
           <h3 className="text-xl font-semibold text-card-foreground mb-4">
