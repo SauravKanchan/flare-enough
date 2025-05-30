@@ -3,7 +3,11 @@ import { ArrowRight, Clock, LineChart, Lock, RefreshCw, Layers } from 'lucide-re
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 
-const Home: React.FC = () => {
+type HeaderProps = {
+  setActivePage: (page: 'home' | 'markets' | 'events') => void;
+};
+
+const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -23,6 +27,7 @@ const Home: React.FC = () => {
                   variant="secondary" 
                   size="lg"
                   className="font-bold"
+                  onClick={() => setActivePage('markets')}
                 >
                   Start Trading
                 </Button>

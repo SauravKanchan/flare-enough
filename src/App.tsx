@@ -17,7 +17,7 @@ function App() {
           <Header activePage={activePage} setActivePage={setActivePage} />
           
           <main className="flex-grow">
-            {activePage === 'home' && <Home />}
+            {activePage === 'home' && <Home setActivePage={setActivePage} />}
             {activePage === 'markets' && <Markets />}
             {activePage === 'events' && <Events />}
           </main>
