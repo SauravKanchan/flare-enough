@@ -56,7 +56,7 @@ class MarketService {
           name: event[0],
           description: event[1],
           timelines: [event[2], event[3]], 
-          date: new Date(event[6] * 1000).toISOString(),
+          date: new Date(event[6] * 1).toISOString(),
           resolved: event[7],
         });
         this.events = Array.from(
