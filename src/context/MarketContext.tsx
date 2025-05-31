@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { EventType, OptionType, TimelineType } from '../types';
-import MarketService from '../services/MarketService';
+import { events, options } from '../data/mockData';
 
 type MarketContextType = {
   selectedEvent: EventType | null;
@@ -15,20 +15,6 @@ const MarketContext = createContext<MarketContextType | undefined>(undefined);
 export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const [selectedTimeline, setSelectedTimeline] = useState<TimelineType | null>(null);
-  const [events, setEvents] = useState<EventType[]>([]);
-  const [options, setOptions] = useState<OptionType[]>([]);
-
-  useEffect(() => {
-    const loadMarketData = async () => {
-      const marketService = MarketService.getInstance();
-      const eventsData = await marketService.getEvents();
-      const optionsData = await marketService.getOptions();
-      setEvents(eventsData);
-      setOptions(optionsData);
-    };
-
-    loadMarketData();
-  }, []);
 
   const selectEvent = (eventId: string | null) => {
     if (!eventId) {
