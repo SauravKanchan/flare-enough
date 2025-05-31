@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useMarket } from '../context/MarketContext';
 import TimelineSelector from '../components/ui/TimelineSelector';
-import { events } from '../data/mockData';
 import { TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
 import Card from '../components/ui/Card';
 import TradeModal from '../components/ui/TradeModal';
@@ -9,7 +8,7 @@ import { OptionType } from '../types';
 import Button from '../components/ui/Button';
 
 const Markets: React.FC = () => {
-  const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline } = useMarket();
+  const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline, events, loading, error } = useMarket();
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -34,6 +33,22 @@ const Markets: React.FC = () => {
       default: return timeline;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center">Loading markets data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center text-red-600">{error}</div>
+      </div>
+    );
+  }
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
