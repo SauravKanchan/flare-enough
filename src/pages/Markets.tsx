@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMarket } from '../context/MarketContext';
+import { useWallet } from '../context/WalletContext';
 import TimelineSelector from '../components/ui/TimelineSelector';
 import { TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
 import Card from '../components/ui/Card';
@@ -11,6 +12,7 @@ import { getOptionPrice } from '../services/BlockScholesService';
 
 const Markets: React.FC = () => {
   const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline, events, loading, error } = useMarket();
+  const { isConnected, signer, connectWallet } = useWallet();
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -25,11 +27,15 @@ const Markets: React.FC = () => {
   }, [selectedEvent, selectedTimeline]);
 
   const handleOptionClick = async (strike: number, type: 'call' | 'put', action: 'buy' | 'sell') => {
+    if (!isConnected) {
+      await connectWallet();
+      return;
+    }
+
     setTradeType(type);
     setTradeAction(action);
     
     try {
-      // Get premium from BlockScholes API
       const premium = await getOptionPrice(strike, type === 'call' ? 'C' : 'P');
       
       const option: OptionType = {
@@ -38,9 +44,9 @@ const Markets: React.FC = () => {
         timeline: selectedTimeline || '',
         strike: strike,
         premium: premium,
-        expiryDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 3 weeks from now
+        expiryDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
         type: type,
-        collateral: strike * 0.1, // 10% collateral requirement
+        collateral: strike * 0.1,
         description: `${type.toUpperCase()} option at strike $${strike.toLocaleString()}`
       };
       
@@ -48,18 +54,6 @@ const Markets: React.FC = () => {
       setIsTradeModalOpen(true);
     } catch (error) {
       console.error('Error fetching option premium:', error);
-    }
-  };
-
-  const getTimelineLabel = (timeline: string) => {
-    switch (timeline) {
-      case 'trumpWins': return 'Trump Wins';
-      case 'trumpLoses': return 'Trump Loses';
-      case 'rateHike': return 'Rate Hike';
-      case 'rateHold': return 'Rate Hold';
-      case 'btcUp': return 'BTC Up';
-      case 'btcDown': return 'BTC Down';
-      default: return timeline;
     }
   };
 
@@ -81,10 +75,8 @@ const Markets: React.FC = () => {
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Event Selector and Timeline Buttons */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Event Selector Dropdown */}
           <div className="relative flex-grow">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -122,7 +114,6 @@ const Markets: React.FC = () => {
             )}
           </div>
 
-          {/* Timeline Buttons */}
           {selectedEvent && (
             <div className="flex gap-2">
               {selectedEvent.timelines.map((timeline) => (
@@ -140,17 +131,15 @@ const Markets: React.FC = () => {
         </div>
       </div>
 
-      {/* Order Book */}
       {selectedEvent && selectedTimeline ? (
         <div className="space-y-6">
           <div className="bg-card rounded-lg shadow-md p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-card-foreground">
-                BTC/USDC order book expiring in 3 weeks.
+                BTC/USDC order book expiring in 3 weeks
               </h2>
             </div>
             
-            {/* Order Book Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -188,7 +177,6 @@ const Markets: React.FC = () => {
                 <tbody>
                   {orderBook.map((row, index) => (
                     <tr key={index} className="hover:bg-accent/50">
-                      {/* Calls side */}
                       <td className="py-2 text-center">{row.call.size.toFixed(1)}</td>
                       <td className="py-2 text-center">{row.call.iv.toFixed(1)}%</td>
                       <td 
@@ -206,12 +194,10 @@ const Markets: React.FC = () => {
                       <td className="py-2 text-center">{row.call.ivAsk.toFixed(1)}%</td>
                       <td className="py-2 text-center">{row.call.askSize.toFixed(1)}</td>
                       
-                      {/* Strike Price */}
                       <td className="py-2 font-medium text-center border-x border-border">
                         {row.strike.toLocaleString()}
                       </td>
                       
-                      {/* Puts side */}
                       <td className="py-2 text-center">{row.put.size.toFixed(1)}</td>
                       <td className="py-2 text-center">{row.put.iv.toFixed(1)}%</td>
                       <td 
@@ -235,7 +221,6 @@ const Markets: React.FC = () => {
             </div>
           </div>
 
-          {/* Conditional Trading Info */}
           <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-4">
             <p className="text-sm text-indigo-700 dark:text-indigo-300">
               Trading on a conditional timeline means your trades only execute if that specific outcome occurs.
@@ -254,7 +239,6 @@ const Markets: React.FC = () => {
         </div>
       )}
       
-      {/* Trade Modal */}
       {selectedOption && (
         <TradeModal
           option={selectedOption}
@@ -264,6 +248,7 @@ const Markets: React.FC = () => {
             setSelectedOption(null);
           }}
           initialSide={tradeAction}
+          signer={signer}
         />
       )}
     </div>

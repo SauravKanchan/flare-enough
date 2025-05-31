@@ -2,30 +2,63 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import Button from './Button';
 import { OptionType } from '../../types';
+import { ethers } from 'ethers';
 
 type TradeModalProps = {
   option: OptionType;
   isOpen: boolean;
   onClose: () => void;
   initialSide?: 'buy' | 'sell';
+  signer: ethers.Signer | null;
 };
 
 const TradeModal: React.FC<TradeModalProps> = ({ 
   option, 
   isOpen, 
   onClose,
-  initialSide = 'buy'
+  initialSide = 'buy',
+  signer
 }) => {
   const [amount, setAmount] = useState('1');
   const [side, setSide] = useState<'buy' | 'sell'>(initialSide);
+  const [isLoading, setIsLoading] = useState(false);
   
   if (!isOpen) return null;
   
   const total = side === 'buy' ? parseFloat(amount) * option.premium : parseFloat(amount) * option.collateral;
+
+  const handleTrade = async () => {
+    if (!signer) {
+      console.error('No signer available');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Here you would implement the actual trading logic using the signer
+      // For example:
+      // const contract = new ethers.Contract(CONTRACTS.FLARE_ENOUGH, FlareEnoughABI, signer);
+      // const tx = await contract.tradeOption(option.id, side, amount, { value: total });
+      // await tx.wait();
+      
+      console.log('Trade executed:', {
+        option,
+        side,
+        amount,
+        total
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Trade failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50\" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md p-6 m-4">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-foreground">
@@ -102,8 +135,13 @@ const TradeModal: React.FC<TradeModalProps> = ({
           </div>
           
           <div className="pt-4">
-            <Button variant="primary" className="w-full">
-              {side === 'buy' ? 'Buy' : 'Sell'} {option.type.toUpperCase()}
+            <Button 
+              variant="primary" 
+              className="w-full"
+              onClick={handleTrade}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Processing...' : `${side === 'buy' ? 'Buy' : 'Sell'} ${option.type.toUpperCase()}`}
             </Button>
           </div>
         </div>
