@@ -25,7 +25,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50\" onClick={onClose} />
       <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md p-6 m-4">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-foreground">
