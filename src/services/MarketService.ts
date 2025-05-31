@@ -52,7 +52,7 @@ class MarketService {
       for (let i = 0; i < count; i++) {
         const event = await contract.getMarket(i);
         this.events.push({
-          id: i,
+          id: i+1,
           name: event[0],
           description: event[1],
           timelines: [event[2], event[3]], 
