@@ -8,11 +8,14 @@ import Home from './pages/Home';
 import Markets from './pages/Markets';
 import Events from './pages/Events';
 import { NotificationProvider } from "@blockscout/app-sdk";
+import { TransactionPopupProvider } from "@blockscout/app-sdk";
+
 
 function App() {
   const [activePage, setActivePage] = useState<'home' | 'markets' | 'events'>('home');
   
   return (
+<TransactionPopupProvider>
   <NotificationProvider>
     <ThemeProvider>
       <WalletProvider>
@@ -32,6 +35,8 @@ function App() {
       </WalletProvider>
     </ThemeProvider>
   </NotificationProvider>
+  </TransactionPopupProvider>
+
   );
 }
 

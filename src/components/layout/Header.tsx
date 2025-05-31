@@ -4,6 +4,8 @@ import { useWallet } from '../../context/WalletContext';
 import { Menu, X, Sun, Moon, History } from 'lucide-react';
 import Button from '../ui/Button';
 import Dialog from '../ui/Dialog';
+import { useTransactionPopup } from "@blockscout/app-sdk";
+
 
 type HeaderProps = {
   setActivePage: (page: 'home' | 'markets' | 'events') => void;
@@ -15,6 +17,7 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
   const { isConnected, address, connectWallet, disconnectWallet } = useWallet();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
+    const { openPopup } = useTransactionPopup();
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -33,7 +36,10 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
   };
 
   const handleTransactionHistory = () => {
-    console.log('Viewing transaction history for address:', address);
+    openPopup({
+      chainId: "114", 
+      address: address as string, 
+    });
   };
   
   return (
