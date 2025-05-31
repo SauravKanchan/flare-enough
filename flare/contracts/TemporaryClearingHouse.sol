@@ -1,0 +1,337 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
+
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+import {TestFtsoV2Interface} from "@flarenetwork/flare-periphery-contracts/coston2/TestFtsoV2Interface.sol";
+import {ContractRegistry} from "@flarenetwork/flare-periphery-contracts/coston2/ContractRegistry.sol";
+import {IFeeCalculator} from "@flarenetwork/flare-periphery-contracts/coston2/IFeeCalculator.sol";
+
+import "./ITemporaryClearingHouse.sol";
+
+// Clearing House for options settlement
+contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, ReentrancyGuard {
+    uint256 public constant USDC = 1e6;
+
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+
+    struct Option {
+        address buyer;
+        address seller;
+        uint256 strikePrice;
+        uint256 quantityXrp;
+        uint256 expiry;
+        bool exercised;
+    }
+
+    struct Order {
+        address owner;
+        bool isCall; // true -> CallOption, false -> PutOption
+        uint256 optionId;
+        uint256 costUSDC;
+        bool active;
+    }
+
+    IERC20 public usdcToken;
+
+    // Balances of users which will take affect if this Clearing House is aborted
+    mapping(address => uint256) public deposits;
+
+    // Balances of users which will take effect if this Clearing House is continued
+    mapping(address => uint256) public virtualBalances;
+
+    Option[] public callOptions;
+    Option[] public putOptions;
+
+    // All active and inactive orders
+    Order[] public orderBook;
+
+    // Status of the clearing house
+    Status public status; 
+
+    constructor(IERC20 _usdcToken) {
+        _grantRole(ADMIN_ROLE, msg.sender);
+        usdcToken = _usdcToken;
+    }
+
+    modifier notAborted() {
+        require(status != Status.Aborted, "System aborted");
+        _;
+    }
+
+    modifier pending() {
+        require(status == Status.Pending, "System not in pending state");
+        _;
+    }
+
+    function depositUsdc(uint256 usdcAmount) public pending {
+        usdcToken.transferFrom(msg.sender, address(this), usdcAmount);
+        deposits[msg.sender] += usdcAmount;
+        virtualBalances[msg.sender] += usdcAmount;
+        emit Deposited(msg.sender, usdcAmount);
+    }
+
+    // Only allow withdrawal if the system is not in pending state
+    function withdraw() external nonReentrant {
+        if (status == Status.Pending) {
+            revert("Cannot withdraw during pending state");
+        } else if (status == Status.Aborted) {
+            uint256 usdcAmount = deposits[msg.sender];
+            require(usdcAmount > 0, "Nothing to withdraw");
+            deposits[msg.sender] = 0;
+            usdcToken.transfer(msg.sender, usdcAmount);
+            emit Withdrawn(msg.sender, usdcAmount);
+        } else {
+            uint256 usdcAmount = virtualBalances[msg.sender];
+            require(usdcAmount > 0, "Nothing to withdraw");
+            virtualBalances[msg.sender] = 0;
+            usdcToken.transfer(msg.sender, usdcAmount);
+            emit Withdrawn(msg.sender, usdcAmount);
+        }
+    }
+
+    // Mint a call option, uses seller's USDC without their approval for testnet purpose
+    function mintCallOption(
+        address seller,
+        uint256 strikePrice,
+        uint256 quantityXrp,
+        uint256 expiry
+    ) external pending {
+        uint256 costUSDC = quantityXrp * mintPricePerXrp() / xrp();
+
+        require(virtualBalances[msg.sender] >= costUSDC, "Insufficient balance for buyer");
+        require(virtualBalances[seller] >= costUSDC, "Seller lacks collateral");
+        require(seller != address(0), "Invalid seller");
+        require(expiry > block.timestamp, "Invalid expiry");
+
+        virtualBalances[msg.sender] -= costUSDC;
+        virtualBalances[seller] -= costUSDC;
+
+        uint256 optionId = callOptions.length;
+        callOptions.push(Option({
+            buyer: msg.sender,
+            seller: seller,
+            strikePrice: strikePrice,
+            quantityXrp: quantityXrp,
+            expiry: expiry,
+            exercised: false
+        }));
+
+        emit CallOptionMinted(optionId, msg.sender, seller);
+    }
+
+    // Mint a put option, uses seller's USDC without their approval for testnet purpose
+    function mintPutOption(
+        address seller,
+        uint256 strikePrice,
+        uint256 quantityXrp,
+        uint256 expiry
+    ) external notAborted {
+        uint256 costUSDC = quantityXrp * mintPricePerXrp() / xrp();
+
+        require(virtualBalances[msg.sender] >= costUSDC, "Insufficient balance for buyer");
+        require(virtualBalances[seller] >= costUSDC, "Seller lacks collateral");
+        require(seller != address(0), "Invalid seller");
+        require(expiry > block.timestamp, "Invalid expiry");
+
+        virtualBalances[msg.sender] -= costUSDC;
+        virtualBalances[seller] -= costUSDC;
+
+        uint256 optionId = putOptions.length;
+        putOptions.push(Option({
+            buyer: msg.sender,
+            seller: seller,
+            strikePrice: strikePrice,
+            quantityXrp: quantityXrp,
+            expiry: expiry,
+            exercised: false
+        }));
+
+        emit PutOptionMinted(optionId, msg.sender, seller);
+    }
+
+    function mintPricePerXrp() public pure returns (uint256) {
+        return 1 * USDC;
+    }
+
+    // List a call option for sale, requires the option to be owned by the caller and not exercised
+    function listCallOptionForSale(uint256 optionId, uint256 costUSDC) external notAborted {
+        require(optionId < callOptions.length, "Invalid option ID");
+        Option storage option = callOptions[optionId];
+        require(option.buyer == msg.sender, "Not your option");
+        require(!option.exercised, "Already exercised");
+
+        uint256 orderId = orderBook.length;
+        orderBook.push(Order({
+            owner: msg.sender,
+            isCall: true,
+            optionId: optionId,
+            costUSDC: costUSDC,
+            active: true
+        }));
+
+        emit OrderListed(orderId, true, optionId, msg.sender, costUSDC);
+    }
+
+    function listPutOptionForSale(uint256 optionId, uint256 costUSDC) external notAborted {
+        require(optionId < putOptions.length, "Invalid option ID");
+        Option storage option = putOptions[optionId];
+        require(option.buyer == msg.sender, "Not your option");
+        require(!option.exercised, "Already exercised");
+
+        uint256 orderId = orderBook.length;
+        orderBook.push(Order({
+            owner: msg.sender,
+            isCall: false,
+            optionId: optionId,
+            costUSDC: costUSDC,
+            active: true
+        }));
+
+        emit OrderListed(orderId, false, optionId, msg.sender, costUSDC);
+    }
+
+    // Buy an option from the order book, requires sufficient virtual balance
+    function buyOption(uint256 orderId) external notAborted {
+        require(orderId < orderBook.length, "Invalid order ID");
+        Order storage order = orderBook[orderId];
+        require(order.active, "Inactive order");
+        require(virtualBalances[msg.sender] >= order.costUSDC, "Insufficient virtual balance");
+
+        virtualBalances[msg.sender] -= order.costUSDC;
+        virtualBalances[order.owner] += order.costUSDC;
+
+        if (order.isCall) {
+            Option storage option = callOptions[order.optionId];
+            option.buyer = msg.sender;
+        } else {
+            Option storage option = putOptions[order.optionId];
+            option.buyer = msg.sender;
+        }
+
+        order.active = false;
+
+        emit OrderFilled(orderId, msg.sender);
+    }
+
+    // Exercise a call option, requires the option to be owned by the caller and not exercised
+    function exerciseCallOption(uint256 optionId) external notAborted {
+        require(optionId < callOptions.length, "Invalid option ID");
+        Option storage option = callOptions[optionId];
+
+        require(option.buyer == msg.sender, "Not your option");
+        require(!option.exercised, "Already exercised");
+        require(block.timestamp <= option.expiry, "Option expired");
+
+        (uint256 currentPrice, int8 decimals, ) = getXrpPrice();
+        // assert(XRP == 10**uint8(decimals));
+        require(decimals >= 0, "Invalid decimals");
+
+        uint256 scaledStrike = option.strikePrice;
+        uint256 scaledMarket = currentPrice;
+
+        if (scaledMarket > scaledStrike) {
+            uint256 payoutUSDC = ((scaledMarket - scaledStrike) * option.quantityXrp) / (10 ** uint8(decimals));
+            require(virtualBalances[option.seller] >= payoutUSDC, "Seller lacks funds");
+            virtualBalances[option.seller] -= payoutUSDC;
+            virtualBalances[option.buyer] += payoutUSDC;
+        }
+
+        option.exercised = true;
+
+        emit OrderFilled(optionId, msg.sender);
+    }
+
+    function exercisePutOption(uint256 optionId) external notAborted {
+        require(optionId < putOptions.length, "Invalid option ID");
+        Option storage option = putOptions[optionId];
+
+        require(option.buyer == msg.sender, "Not your option");
+        require(!option.exercised, "Already exercised");
+        require(block.timestamp <= option.expiry, "Option expired");
+
+        (uint256 currentPrice, int8 decimals, ) = getXrpPrice();
+        // assert(XRP == 10**uint8(decimals));
+        require(decimals >= 0, "Invalid decimals");
+
+        uint256 scaledStrike = option.strikePrice;
+        uint256 scaledMarket = currentPrice;
+
+        if (scaledStrike > scaledMarket) {
+            uint256 payoutUSDC = ((scaledStrike - scaledMarket) * option.quantityXrp) / (10 ** uint8(decimals));
+            require(virtualBalances[option.seller] >= payoutUSDC, "Seller lacks funds");
+            virtualBalances[option.seller] -= payoutUSDC;
+            virtualBalances[option.buyer] += payoutUSDC;
+        }
+
+        option.exercised = true;
+
+        emit OrderFilled(optionId, msg.sender); 
+    }
+
+    // Performed by Factory
+    function abortSystem() external pending onlyRole(ADMIN_ROLE) {
+        status = Status.Aborted;
+
+        delete callOptions;
+        delete putOptions;
+        delete orderBook;
+
+        emit SystemAborted();
+    }
+
+    // Performed by Factory
+    function continueSystem() external pending onlyRole(ADMIN_ROLE) {
+        status = Status.Continued;
+
+        emit SystemContinued();
+    }
+
+    function getCallOptionsLength() external view returns (uint256) {
+        return callOptions.length;
+    }
+
+    function getPutOptionsLength() external view returns (uint256) {
+        return putOptions.length;
+    }
+
+    function getOrderBookLength() external view returns (uint256) {
+        return orderBook.length;
+    }
+
+
+    function getXrpPrice()
+        public
+        view
+        returns (
+            uint256 value,
+            int8 decimals,
+            uint64 timestamp
+        )
+    {
+        if (testXrpPrice > 0) {
+            return (testXrpPrice, testXrpDecimals, uint64(block.timestamp));
+        } else {
+            TestFtsoV2Interface ftsoV2 = ContractRegistry.getTestFtsoV2();
+            // https://dev.flare.network/ftso/feeds/
+            bytes21 xrp_id = 0x015852502f55534400000000000000000000000000;
+            return ftsoV2.getFeedById(xrp_id);
+        }
+    }
+
+    // Mock price feed for XRP
+    uint256 public testXrpPrice;
+    int8 public testXrpDecimals;
+    
+    function setTestXrpPrice(uint256 price, int8 decimals) external {
+        testXrpPrice = price;
+        testXrpDecimals = decimals;
+    }
+
+    function xrp() public view returns (uint256) {
+        (, int8 decimals, ) = getXrpPrice();
+        return 10 ** uint8(decimals);
+    }
+}
