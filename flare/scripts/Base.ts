@@ -1,9 +1,20 @@
 import hre, { ethers } from "hardhat";
+import {
+    IFlareSystemsManagerInstance,
+    IFdcRequestFeeConfigurationsInstance,
+    IRelayInstance,
+} from "../typechain-types";
+
+const FdcHub = artifacts.require("IFdcHub");
+const FdcRequestFeeConfigurations = artifacts.require("IFdcRequestFeeConfigurations");
+const FlareSystemsManager = artifacts.require("IFlareSystemsManager");
+const IRelay = artifacts.require("IRelay");
+const IFlareContractRegistryArtifact = artifacts.require("IFlareContractRegistry");
 
 const FLARE_CONTRACT_REGISTRY_ADDRESS = "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019";
 
 async function getFlareContractRegistry() {
-    return await ethers.getContractAt("IFlareContractRegistry", FLARE_CONTRACT_REGISTRY_ADDRESS);
+    return await IFlareContractRegistryArtifact.at(FLARE_CONTRACT_REGISTRY_ADDRESS);
 }
 
 async function getContractAddressByName(name: string) {
@@ -28,24 +39,26 @@ function sleep(ms: number) {
 }
 
 async function getFdcHub() {
-    const fdcHubAddress = await getContractAddressByName("FdcHub");
-    return await ethers.getContractAt("IFdcHub", fdcHubAddress);
+    const fdcHubAddress: string = await getContractAddressByName("FdcHub");
+    return await FdcHub.at(fdcHubAddress);
 }
 
 async function getFlareSystemsManager() {
-    const address = await getContractAddressByName("FlareSystemsManager");
-    return await ethers.getContractAt("IFlareSystemsManager", address);
+    const flareSystemsManagerAddress: string = await getContractAddressByName("FlareSystemsManager");
+    return await FlareSystemsManager.at(flareSystemsManagerAddress);
 }
 
 async function getFdcRequestFee(abiEncodedRequest: string) {
-    const addr = await getContractAddressByName("FdcRequestFeeConfigurations");
-    const contract = await ethers.getContractAt("IFdcRequestFeeConfigurations", addr);
-    return await contract.getRequestFee(abiEncodedRequest);
+    const fdcRequestFeeConfigurationsAddress: string = await getContractAddressByName("FdcRequestFeeConfigurations");
+    const fdcRequestFeeConfigurations: IFdcRequestFeeConfigurationsInstance = await FdcRequestFeeConfigurations.at(
+        fdcRequestFeeConfigurationsAddress
+    );
+    return await fdcRequestFeeConfigurations.getRequestFee(abiEncodedRequest);
 }
 
 async function getRelay() {
-    const addr = await getContractAddressByName("Relay");
-    return await ethers.getContractAt("IRelay", addr);
+    const relayAddress: string = await getContractAddressByName("Relay");
+    return await IRelay.at(relayAddress);
 }
 
 async function prepareAttestationRequestBase(
@@ -60,9 +73,9 @@ async function prepareAttestationRequestBase(
     const sourceId = toUtf8HexString(sourceIdBase);
 
     const request = {
-        attestationType,
-        sourceId,
-        requestBody,
+        attestationType: attestationType,
+        sourceId: sourceId,
+        requestBody: requestBody,
     };
     console.log("Prepared request:\n", request, "\n");
 
@@ -74,9 +87,8 @@ async function prepareAttestationRequestBase(
         },
         body: JSON.stringify(request),
     });
-
-    if (response.status !== 200) {
-        throw new Error(`Response status is not OK: ${response.status} ${response.statusText}`);
+    if (response.status != 200) {
+        throw new Error(`Response status is not OK, status ${response.status} ${response.statusText}\n`);
     }
     console.log("Response status is OK\n");
 
@@ -84,110 +96,99 @@ async function prepareAttestationRequestBase(
 }
 
 async function calculateRoundId(transaction: any) {
-    const blockNumber = transaction.blockNumber ?? transaction.receipt?.blockNumber;
+    const blockNumber = transaction.receipt.blockNumber;
     const block = await ethers.provider.getBlock(blockNumber);
-    const timestamp = BigInt(block.timestamp);
+    // @ts-ignore
+    const blockTimestamp = BigInt(block.timestamp);
 
-    const systemsManager = await getFlareSystemsManager();
-    const start = BigInt(await systemsManager.firstVotingRoundStartTs());
-    const duration = BigInt(await systemsManager.votingEpochDurationSeconds());
+    const flareSystemsManager: IFlareSystemsManagerInstance = await getFlareSystemsManager();
+    const firsVotingRoundStartTs = BigInt(await flareSystemsManager.firstVotingRoundStartTs());
+    const votingEpochDurationSeconds = BigInt(await flareSystemsManager.votingEpochDurationSeconds());
 
-    const roundId = Number((timestamp - start) / duration);
-    console.log("Block timestamp:", timestamp.toString());
-    console.log("Start:", start.toString());
-    console.log("Duration:", duration.toString());
-    console.log("Calculated round id:", roundId);
-    console.log("Actual round id:", await systemsManager.getCurrentVotingEpochId());
+    console.log("Block timestamp:", blockTimestamp, "\n");
+    console.log("First voting round start ts:", firsVotingRoundStartTs, "\n");
+    console.log("Voting epoch duration seconds:", votingEpochDurationSeconds, "\n");
 
+    const roundId = Number((blockTimestamp - firsVotingRoundStartTs) / votingEpochDurationSeconds);
+    console.log("Calculated round id:", roundId, "\n");
+    console.log("Received round id:", Number(await flareSystemsManager.getCurrentVotingEpochId()), "\n");
     return roundId;
 }
 
 async function submitAttestationRequest(abiEncodedRequest: string) {
-    const hub = await getFdcHub();
-    const fee = await getFdcRequestFee(abiEncodedRequest);
+    const fdcHub = await getFdcHub();
 
-    const tx = await hub.requestAttestation(abiEncodedRequest, {
-        value: fee,
+    const requestFee = await getFdcRequestFee(abiEncodedRequest);
+
+    const transaction = await fdcHub.requestAttestation(abiEncodedRequest, {
+        value: requestFee,
     });
-    const receipt = await tx.wait();
+    console.log("Submitted request:", transaction.tx, "\n");
 
-    console.log("Submitted request:", receipt.transactionHash);
-
-    const roundId = await calculateRoundId(receipt);
+    const roundId = await calculateRoundId(transaction);
     console.log(
         `Check round progress at: https://${hre.network.name}-systems-explorer.flare.rocks/voting-epoch/${roundId}?tab=fdc\n`
     );
-
     return roundId;
 }
 
-async function postRequestToDALayer(url: string, request: any, watchStatus = false) {
+async function postRequestToDALayer(url: string, request: any, watchStatus: boolean = false) {
     const response = await fetch(url, {
         method: "POST",
         headers: {
+            //   "X-API-KEY": "",
             "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
     });
-
-    if (watchStatus && response.status !== 200) {
-        throw new Error(`Response status is not OK: ${response.status} ${response.statusText}`);
+    if (watchStatus && response.status != 200) {
+        throw new Error(`Response status is not OK, status ${response.status} ${response.statusText}\n`);
     } else if (watchStatus) {
-        console.log("Response status is OK");
+        console.log("Response status is OK\n");
     }
-
     return await response.json();
 }
 
 async function retrieveDataAndProofBase(url: string, abiEncodedRequest: string, roundId: number) {
     console.log("Waiting for the round to finalize...");
-    const relay = await getRelay();
-
+    // We check every 10 seconds if the round is finalized
+    const relay: IRelayInstance = await getRelay();
     while (!(await relay.isFinalized(200, roundId))) {
         await sleep(30000);
     }
-
     console.log("Round finalized!\n");
 
     const request = {
         votingRoundId: roundId,
         requestBytes: abiEncodedRequest,
     };
-
-    console.log("Prepared request:\n", request);
+    console.log("Prepared request:\n", request, "\n");
 
     await sleep(10000);
     let proof = await postRequestToDALayer(url, request, true);
     console.log("Waiting for the DA Layer to generate the proof...");
-
-    while (proof.response_hex === undefined) {
+    while (proof.response_hex == undefined) {
         await sleep(10000);
         proof = await postRequestToDALayer(url, request, false);
     }
-
     console.log("Proof generated!\n");
-    console.log("Proof:", proof);
 
+    console.log("Proof:", proof, "\n");
     return proof;
 }
 
-async function retrieveDataAndProofBaseWithRetry(
-    url: string,
-    abiEncodedRequest: string,
-    roundId: number,
-    attempts = 10
-) {
+async function retrieveDataAndProofBaseWithRetry(url: string, abiEncodedRequest: string, roundId: number, attempts: number = 10) {
     for (let i = 0; i < attempts; i++) {
         try {
             return await retrieveDataAndProofBase(url, abiEncodedRequest, roundId);
         } catch (e: any) {
-            console.log(e, `Remaining attempts: ${attempts - i - 1}`);
+            console.log(e, "\n", "Remaining attempts:", attempts - i, "\n");
             await sleep(20000);
         }
     }
-
     throw new Error(`Failed to retrieve data and proofs after ${attempts} attempts`);
 }
+
 
 export {
     toUtf8HexString,

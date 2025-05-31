@@ -1,25 +1,46 @@
 import { run, web3 } from "hardhat";
 import { prepareAttestationRequestBase, submitAttestationRequest, retrieveDataAndProofBaseWithRetry } from "./Base";
 
-const StarWarsCharacterListV2 = artifacts.require("StarWarsCharacterListV2");
+const FlareEnough = artifacts.require("FlareEnough");
 
 const { WEB2JSON_VERIFIER_URL_TESTNET, VERIFIER_API_KEY_TESTNET, COSTON2_DA_LAYER_URL } = process.env;
 
-// yarn hardhat run scripts/fdcExample/Web2Json.ts --network coston2
+console.log({WEB2JSON_VERIFIER_URL_TESTNET, VERIFIER_API_KEY_TESTNET, COSTON2_DA_LAYER_URL});
 
 // Request data
 // const apiUrl = "https://swapi.dev/api/people/3/";
 // const postProcessJq = `{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split("/") | .[-2] | tonumber)}`;
-const apiUrl = "https://swapi.info/api/people/3";
-const postProcessJq = `{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split("/") | .[-1] | tonumber)}`;
+const apiUrl = "https://prague.proofofexploit.com/retrieve";
+const postProcessJq = `{name: .name, eventId: .eventId, eventHappened: .eventHappened}`;
 const httpMethod = "GET";
 // Defaults to "Content-Type": "application/json"
 const headers = "{}";
 const queryParams = "{}";
 const body = "{}";
-const abiSignature = `{"components": [{"internalType": "string", "name": "name", "type": "string"},{"internalType": "uint256", "name": "height", "type": "uint256"},{"internalType": "uint256", "name": "mass", "type": "uint256"},{"internalType": "uint256", "name": "numberOfFilms", "type": "uint256"},{"internalType": "uint256", "name": "uid", "type": "uint256"}],"name": "task","type": "tuple"}`;
+const abiSignature = `{
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "eventId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "bool",
+              "name": "eventHappened",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct DataTransportObject",
+          "name": "dto",
+          "type": "tuple"
+        }`;
 
-// Configuration constants
+// // Configuration constants
 const attestationTypeBase = "Web2Json";
 const sourceIdBase = "PublicWeb2";
 const verifierUrlBase = WEB2JSON_VERIFIER_URL_TESTNET;
@@ -36,8 +57,7 @@ async function prepareAttestationRequest(apiUrl: string, postProcessJq: string, 
     };
 
     const url = `${verifierUrlBase}Web2Json/prepareRequest`;
-    const apiKey = VERIFIER_API_KEY_TESTNET;
-
+    const apiKey = VERIFIER_API_KEY_TESTNET as string;
     return await prepareAttestationRequestBase(url, apiKey, attestationTypeBase, sourceIdBase, requestBody);
 }
 
@@ -49,20 +69,20 @@ async function retrieveDataAndProof(abiEncodedRequest: string, roundId: number) 
 
 async function deployAndVerifyContract() {
     const args: any[] = [];
-    const characterList: StarWarsCharacterListV2Instance = await StarWarsCharacterListV2.new(...args);
+    const dataContract: any = await FlareEnough.new(...args);
     try {
         await run("verify:verify", {
-            address: characterList.address,
+            address: dataContract.address,
             constructorArguments: args,
         });
     } catch (e: any) {
         console.log(e);
     }
-    console.log("StarWarsCharacterListV2 deployed to", characterList.address, "\n");
-    return characterList;
+    console.log("StarWarsdataContractV2 deployed to", dataContract.address, "\n");
+    return dataContract;
 }
 
-async function interactWithContract(characterList: StarWarsCharacterListV2Instance, proof: any) {
+async function interactWithContract(dataContract: any, proof: any) {
     console.log("Proof hex:", proof.response_hex, "\n");
 
     // A piece of black magic that allows us to read the response type from an artifact
@@ -72,12 +92,11 @@ async function interactWithContract(characterList: StarWarsCharacterListV2Instan
 
     const decodedResponse = web3.eth.abi.decodeParameter(responseType, proof.response_hex);
     console.log("Decoded proof:", decodedResponse, "\n");
-    const transaction = await characterList.addCharacter({
+    const transaction = await dataContract.addEvent({
         merkleProof: proof.proof,
         data: decodedResponse,
     });
     console.log("Transaction:", transaction.tx, "\n");
-    console.log("Star Wars Characters:\n", await characterList.getAllCharacters(), "\n");
 }
 
 async function main() {
@@ -88,10 +107,11 @@ async function main() {
     const roundId = await submitAttestationRequest(abiEncodedRequest);
 
     const proof = await retrieveDataAndProof(abiEncodedRequest, roundId);
+    console.log("Proof:", proof, "\n");
 
-    const characterList: StarWarsCharacterListV2Instance = await deployAndVerifyContract();
+    const dataContract: any = await deployAndVerifyContract();
 
-    await interactWithContract(characterList, proof);
+    await interactWithContract(dataContract, proof);
 }
 
 void main().then(() => {
