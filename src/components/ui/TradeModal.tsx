@@ -38,10 +38,20 @@ const TradeModal: React.FC<TradeModalProps> = ({
       // Here you would implement the actual trading logic using the signer
       // For example:
       // const contract = new ethers.Contract(CONTRACTS.FLARE_ENOUGH, FlareEnoughABI, signer);
-      // const tx = await contract.tradeOption(option.id, side, amount, { value: total });
+      // const tx = await contract.tradeOption(
+      //   option.eventId,
+      //   option.timeline,
+      //   option.strike,
+      //   option.type,
+      //   side,
+      //   amount,
+      //   { value: total }
+      // );
       // await tx.wait();
       
       console.log('Trade executed:', {
+        eventId: option.eventId,
+        timeline: option.timeline,
         option,
         side,
         amount,
@@ -111,6 +121,14 @@ const TradeModal: React.FC<TradeModalProps> = ({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Strike Price</span>
               <span className="text-foreground">${option.strike.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Event ID</span>
+              <span className="text-foreground">{option.eventId}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Timeline</span>
+              <span className="text-foreground">{option.timeline}</span>
             </div>
             {side === 'buy' && (
               <div className="flex justify-between text-sm">
