@@ -9,6 +9,7 @@ import { OptionType } from '../types';
 import Button from '../components/ui/Button';
 import { generateOrderBook } from '../utils/marketDataGenerator';
 import { getOptionPrice } from '../services/BlockScholesService';
+import { getTimelineLabel } from '../utils/general';
 
 const Markets: React.FC = () => {
   const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline, events, loading, error } = useMarket();
