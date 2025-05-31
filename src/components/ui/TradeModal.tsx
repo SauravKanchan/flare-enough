@@ -3,6 +3,11 @@ import { X } from 'lucide-react';
 import Button from './Button';
 import { OptionType } from '../../types';
 import { ethers } from 'ethers';
+import * as FlareEnoughABI from '../../config/FlareEnough.json';
+import * as TestUSDCABI from '../../config/TestUSDC.json';
+import { CONTRACTS } from '../../config/index';
+import { useNotification } from "@blockscout/app-sdk";
+
 
 type TradeModalProps = {
   option: OptionType;
@@ -22,6 +27,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
   const [amount, setAmount] = useState('1');
   const [side, setSide] = useState<'buy' | 'sell'>(initialSide);
   const [isLoading, setIsLoading] = useState(false);
+  const { openTxToast } = useNotification();
   
   if (!isOpen) return null;
   
@@ -48,7 +54,19 @@ const TradeModal: React.FC<TradeModalProps> = ({
       //   { value: total }
       // );
       // await tx.wait();
+      const USDC = new ethers.Contract(
+        CONTRACTS.TEST_USDC,
+        TestUSDCABI.abi,
+        signer
+      );
+      const amountInWei = ethers.utils.parseUnits(amount, 6); // Assuming USDC has 6 decimals
+
+      // Approve USDC transfer
+      const approveTx = await USDC.approve(CONTRACTS.FLARE_ENOUGH, amountInWei);
       
+      await approveTx.wait();
+      openTxToast("114", approveTx.hash);
+
       console.log('Trade executed:', {
         eventId: option.eventId,
         timeline: option.timeline,
