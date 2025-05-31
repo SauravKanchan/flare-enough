@@ -15,13 +15,13 @@ export default buildModule("DeployFactoryWithTestUSDC", (m) => {
     },
     {
       name: "FED Interest Rate Decision",
-      description: "The Federal Reserve decision on interest rates in December 2024.",
+      description: "The Federal Reserve decision on interest rates",
       outcome1: "Rate hike",
       outcome2: "Rate hold",
       event_date: +new Date("2025-07-15T00:00:00Z"),
     },
     {
-      name: "Will ethereum etf be approved?",
+      name: "Will ethereum ETF be approved?",
       description: "Will the SEC approve an Ethereum ETF by the end of 2025?",
       outcome1: "Approved",
       outcome2: "Denied",
