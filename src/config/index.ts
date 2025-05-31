@@ -15,8 +15,8 @@ export const NETWORK = {
 
 // Contract Addresses
 export const CONTRACTS = {
-  FLARE_ENOUGH: '0xEE2A903ffE787B243364925d1e2a07B6615475f4', // Replace with actual address
-  TEST_USDC: '0x0dbC84EAB46BC85740383Dc59FC7D775eb09806B',    // Replace with actual address
+  FLARE_ENOUGH: '0x76f85895934533c23B6B75C3ef323594b778211c', // Replace with actual address
+  TEST_USDC: '0x5652d52738a25C1b99cC6E0DE28CE69295ab719E',    // Replace with actual address
 };
 
 // API Configuration

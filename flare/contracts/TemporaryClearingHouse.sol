@@ -20,17 +20,18 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
     struct Option {
         address buyer;
         address seller;
-        uint256 strikePrice;
+        uint256 strikePriceUSDC;
         uint256 quantityXrp;
         uint256 expiry;
         bool exercised;
+        bool destroyed;
     }
 
     struct Order {
         address owner;
         bool isCall; // true -> CallOption, false -> PutOption
         uint256 optionId;
-        uint256 costUSDC;
+        uint256 premiumUSDC;
         bool active;
     }
 
@@ -94,29 +95,35 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
 
     // Mint a call option, uses seller's USDC without their approval for testnet purpose
     function mintCallOption(
+        uint256 premiumUSDC,
         address seller,
-        uint256 strikePrice,
+        uint256 strikePriceUSDC,
         uint256 quantityXrp,
         uint256 expiry
     ) external pending {
-        uint256 costUSDC = quantityXrp * mintPricePerXrp() / xrp();
-
-        require(virtualBalances[msg.sender] >= costUSDC, "Insufficient balance for buyer");
-        require(virtualBalances[seller] >= costUSDC, "Seller lacks collateral");
+        address buyer = msg.sender;
         require(seller != address(0), "Invalid seller");
         require(expiry > block.timestamp, "Invalid expiry");
 
-        virtualBalances[msg.sender] -= costUSDC;
-        virtualBalances[seller] -= costUSDC;
+        // Buyer pays premium to seller
+        virtualBalances[buyer] -= premiumUSDC;
+        virtualBalances[seller] += premiumUSDC;
+
+
+        // Seller underwrites the option
+        uint256 valueUSDC = quantityXrp * strikePriceUSDC / one_xrp();
+        require(virtualBalances[seller] >= valueUSDC, "Seller lacks collateral");
+        virtualBalances[seller] -= valueUSDC;
 
         uint256 optionId = callOptions.length;
         callOptions.push(Option({
             buyer: msg.sender,
             seller: seller,
-            strikePrice: strikePrice,
+            strikePriceUSDC: strikePriceUSDC,
             quantityXrp: quantityXrp,
             expiry: expiry,
-            exercised: false
+            exercised: false,
+            destroyed: false
         }));
 
         emit CallOptionMinted(optionId, msg.sender, seller);
@@ -124,73 +131,77 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
 
     // Mint a put option, uses seller's USDC without their approval for testnet purpose
     function mintPutOption(
+        uint256 premiumUSDC,
         address seller,
-        uint256 strikePrice,
+        uint256 strikePriceUSDC,
         uint256 quantityXrp,
         uint256 expiry
     ) external notAborted {
-        uint256 costUSDC = quantityXrp * mintPricePerXrp() / xrp();
-
-        require(virtualBalances[msg.sender] >= costUSDC, "Insufficient balance for buyer");
-        require(virtualBalances[seller] >= costUSDC, "Seller lacks collateral");
+        address buyer = msg.sender;
         require(seller != address(0), "Invalid seller");
         require(expiry > block.timestamp, "Invalid expiry");
 
-        virtualBalances[msg.sender] -= costUSDC;
-        virtualBalances[seller] -= costUSDC;
+        // Buyer pays premium to seller
+        virtualBalances[buyer] -= premiumUSDC;
+        virtualBalances[seller] += premiumUSDC;
+
+        // Seller underwrites the option
+        uint256 valueUSDC = quantityXrp * strikePriceUSDC / one_xrp();
+        require(virtualBalances[seller] >= valueUSDC, "Seller lacks collateral");
+        virtualBalances[seller] -= valueUSDC;
 
         uint256 optionId = putOptions.length;
         putOptions.push(Option({
             buyer: msg.sender,
             seller: seller,
-            strikePrice: strikePrice,
+            strikePriceUSDC: strikePriceUSDC,
             quantityXrp: quantityXrp,
             expiry: expiry,
-            exercised: false
+            exercised: false,
+            destroyed: false
         }));
 
         emit PutOptionMinted(optionId, msg.sender, seller);
     }
 
-    function mintPricePerXrp() public pure returns (uint256) {
-        return 1 * USDC;
-    }
-
     // List a call option for sale, requires the option to be owned by the caller and not exercised
-    function listCallOptionForSale(uint256 optionId, uint256 costUSDC) external notAborted {
+    // Can list for any premium
+    function listCallOptionForSale(uint256 optionId, uint256 premiumUSDC) external notAborted {
         require(optionId < callOptions.length, "Invalid option ID");
         Option storage option = callOptions[optionId];
         require(option.buyer == msg.sender, "Not your option");
         require(!option.exercised, "Already exercised");
+        require(block.timestamp <= option.expiry, "Option expired");
 
         uint256 orderId = orderBook.length;
         orderBook.push(Order({
             owner: msg.sender,
             isCall: true,
             optionId: optionId,
-            costUSDC: costUSDC,
+            premiumUSDC: premiumUSDC,
             active: true
         }));
 
-        emit OrderListed(orderId, true, optionId, msg.sender, costUSDC);
+        emit OrderListed(orderId, true, optionId, msg.sender, premiumUSDC);
     }
 
-    function listPutOptionForSale(uint256 optionId, uint256 costUSDC) external notAborted {
+    function listPutOptionForSale(uint256 optionId, uint256 premiumUSDC) external notAborted {
         require(optionId < putOptions.length, "Invalid option ID");
         Option storage option = putOptions[optionId];
         require(option.buyer == msg.sender, "Not your option");
         require(!option.exercised, "Already exercised");
+        require(block.timestamp <= option.expiry, "Option expired");
 
         uint256 orderId = orderBook.length;
         orderBook.push(Order({
             owner: msg.sender,
             isCall: false,
             optionId: optionId,
-            costUSDC: costUSDC,
+            premiumUSDC: premiumUSDC,
             active: true
         }));
 
-        emit OrderListed(orderId, false, optionId, msg.sender, costUSDC);
+        emit OrderListed(orderId, false, optionId, msg.sender, premiumUSDC);
     }
 
     // Buy an option from the order book, requires sufficient virtual balance
@@ -198,10 +209,10 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         require(orderId < orderBook.length, "Invalid order ID");
         Order storage order = orderBook[orderId];
         require(order.active, "Inactive order");
-        require(virtualBalances[msg.sender] >= order.costUSDC, "Insufficient virtual balance");
+        require(virtualBalances[msg.sender] >= order.premiumUSDC, "Insufficient virtual balance");
 
-        virtualBalances[msg.sender] -= order.costUSDC;
-        virtualBalances[order.owner] += order.costUSDC;
+        virtualBalances[msg.sender] -= order.premiumUSDC;
+        virtualBalances[order.owner] += order.premiumUSDC;
 
         if (order.isCall) {
             Option storage option = callOptions[order.optionId];
@@ -225,12 +236,11 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         require(!option.exercised, "Already exercised");
         require(block.timestamp <= option.expiry, "Option expired");
 
-        (uint256 currentPrice, int8 decimals, ) = getXrpPrice();
-        // assert(XRP == 10**uint8(decimals));
+        (uint256 currentPriceUSDC, int8 decimals, ) = getXrpPrice();
         require(decimals >= 0, "Invalid decimals");
 
-        uint256 scaledStrike = option.strikePrice;
-        uint256 scaledMarket = currentPrice;
+        uint256 scaledStrike = option.strikePriceUSDC;
+        uint256 scaledMarket = currentPriceUSDC;
 
         if (scaledMarket > scaledStrike) {
             uint256 payoutUSDC = ((scaledMarket - scaledStrike) * option.quantityXrp) / (10 ** uint8(decimals));
@@ -252,12 +262,12 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         require(!option.exercised, "Already exercised");
         require(block.timestamp <= option.expiry, "Option expired");
 
-        (uint256 currentPrice, int8 decimals, ) = getXrpPrice();
+        (uint256 currentPriceUSDC, int8 decimals, ) = getXrpPrice();
         // assert(XRP == 10**uint8(decimals));
         require(decimals >= 0, "Invalid decimals");
 
-        uint256 scaledStrike = option.strikePrice;
-        uint256 scaledMarket = currentPrice;
+        uint256 scaledStrike = option.strikePriceUSDC;
+        uint256 scaledMarket = currentPriceUSDC;
 
         if (scaledStrike > scaledMarket) {
             uint256 payoutUSDC = ((scaledStrike - scaledMarket) * option.quantityXrp) / (10 ** uint8(decimals));
@@ -269,6 +279,34 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         option.exercised = true;
 
         emit OrderFilled(optionId, msg.sender); 
+    }
+
+    function destroyCallOption(uint256 optionId) external notAborted {
+        // must be expired and not exercised
+        require(optionId < callOptions.length, "Invalid option ID");
+        Option storage option = callOptions[optionId];
+        require(!option.exercised, "Already exercised");
+        require(option.seller == msg.sender, "Not underwriter");
+        require(block.timestamp > option.expiry, "Option not expired");
+        require(!option.destroyed, "Already destroyed");
+
+        option.destroyed = true;
+        // Return the collateral to the seller
+        virtualBalances[option.seller] += option.quantityXrp * option.strikePriceUSDC / one_xrp();
+    }
+
+    function destroyPutOption(uint256 optionId) external notAborted {
+        // must be expired and not exercised
+        require(optionId < putOptions.length, "Invalid option ID");
+        Option storage option = putOptions[optionId];
+        require(!option.exercised, "Already exercised");
+        require(option.seller == msg.sender, "Not underwriter");
+        require(block.timestamp > option.expiry, "Option not expired");
+        require(!option.destroyed, "Already destroyed");
+
+        option.destroyed = true;
+        // Return the collateral to the seller
+        virtualBalances[option.seller] += option.quantityXrp * option.strikePriceUSDC / one_xrp();
     }
 
     // Performed by Factory
@@ -330,7 +368,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         testXrpDecimals = decimals;
     }
 
-    function xrp() public view returns (uint256) {
+    function one_xrp() public view returns (uint256) {
         (, int8 decimals, ) = getXrpPrice();
         return 10 ** uint8(decimals);
     }

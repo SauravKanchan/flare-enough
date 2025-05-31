@@ -31,7 +31,8 @@ interface ITemporaryClearingHouse {
     function depositUsdc(uint usdcAmount) external;
     function withdraw() external;
 
-    function mintCallOption(
+    function mintCallOption(  
+        uint256 premiumUSDC,
         address seller,
         uint256 strikePrice,
         uint256 quantity,
@@ -39,6 +40,7 @@ interface ITemporaryClearingHouse {
     ) external;
 
     function mintPutOption(
+        uint256 premiumUSDC,
         address seller,
         uint256 strikePrice,
         uint256 quantity,
