@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useWallet } from '../../context/WalletContext';
-import { Menu, X, Sun, Moon, History } from 'lucide-react';
+import { Menu, X, Sun, Moon, History, Wallet } from 'lucide-react';
 import Button from '../ui/Button';
 import Dialog from '../ui/Dialog';
+import DepositModal from '../ui/DepositModal';
 import { useTransactionPopup } from "@blockscout/app-sdk";
-
 
 type HeaderProps = {
   setActivePage: (page: 'home' | 'markets' | 'events') => void;
@@ -14,10 +14,11 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
   const { theme, toggleTheme } = useTheme();
-  const { isConnected, address, connectWallet, disconnectWallet } = useWallet();
+  const { isConnected, address, connectWallet, disconnectWallet, balance, deposit } = useWallet();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
-    const { openPopup } = useTransactionPopup();
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const { openPopup } = useTransactionPopup();
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -40,6 +41,14 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
       chainId: "114", 
       address: address as string, 
     });
+  };
+
+  const handleDeposit = async (amount: number) => {
+    try {
+      await deposit(amount);
+    } catch (error) {
+      console.error('Deposit failed:', error);
+    }
   };
   
   return (
@@ -78,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
           </nav>
           
           {/* Right side buttons */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -87,27 +96,44 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
             
-            {/* Transaction History button - only shown when connected */}
+            {/* Balance and Deposit (only shown when connected) */}
             {isConnected && (
-              <button
-                onClick={handleTransactionHistory}
-                className="ml-4 p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                title="Transaction History"
-              >
-                <History size={20} />
-              </button>
+              <>
+                <div className="hidden sm:flex items-center space-x-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                    Balance: ${balance?.toFixed(2) || '0.00'}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDepositModal(true)}
+                    className="flex items-center"
+                  >
+                    <Wallet size={16} className="mr-2" />
+                    Deposit
+                  </Button>
+                </div>
+
+                <button
+                  onClick={handleTransactionHistory}
+                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  title="Transaction History"
+                >
+                  <History size={20} />
+                </button>
+              </>
             )}
             
             {/* Connect wallet button */}
             <Button 
-              className="ml-4 hidden sm:block"
+              className="hidden sm:block"
               onClick={handleWalletClick}
             >
               {isConnected ? formatAddress(address!) : 'Connect Wallet'}
             </Button>
             
             {/* Mobile menu button */}
-            <div className="md:hidden ml-4">
+            <div className="md:hidden">
               <button
                 onClick={toggleMobileMenu}
                 className="p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
@@ -148,14 +174,32 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
               }}
             />
             {isConnected && (
-              <MobileNavItem 
-                label="Transaction History" 
-                isActive={false} 
-                onClick={() => {
-                  handleTransactionHistory();
-                  setMobileMenuOpen(false);
-                }}
-              />
+              <>
+                <MobileNavItem 
+                  label="Transaction History" 
+                  isActive={false} 
+                  onClick={() => {
+                    handleTransactionHistory();
+                    setMobileMenuOpen(false);
+                  }}
+                />
+                <MobileNavItem 
+                  label={`Balance: $${balance?.toFixed(2) || '0.00'}`}
+                  isActive={false}
+                  onClick={() => {}}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full mt-2"
+                  onClick={() => {
+                    setShowDepositModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <Wallet size={16} className="mr-2" />
+                  Deposit
+                </Button>
+              </>
             )}
             <div className="pt-4">
               <Button 
@@ -178,6 +222,13 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
         description="Are you sure you want to disconnect your wallet?"
         confirmText="Disconnect"
         cancelText="Cancel"
+      />
+
+      {/* Deposit Modal */}
+      <DepositModal
+        isOpen={showDepositModal}
+        onClose={() => setShowDepositModal(false)}
+        onDeposit={handleDeposit}
       />
     </header>
   );
