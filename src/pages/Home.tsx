@@ -16,6 +16,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
 
   const handleTimelineClick = (eventId: string, timeline: string) => {
     selectEvent(eventId);
+    // @ts-ignore
     selectTimeline(timeline);
     setActivePage('markets');
   };

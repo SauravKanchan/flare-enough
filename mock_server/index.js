@@ -15,7 +15,7 @@ app.post('/store', (req, res) => {
 // Endpoint to retrieve stored JSON data
 app.get('/retrieve', (req, res) => {
   if (storedData) {
-    res.json({ data: storedData });
+    res.json(storedData);
   } else {
     res.json({ message: 'No data stored yet' });
   }

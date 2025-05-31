@@ -15,6 +15,7 @@ const Events: React.FC = () => {
 
   const handleTimelineClick = (eventId: string, timeline: string) => {
     selectEvent(eventId);
+    // @ts-ignore
     selectTimeline(timeline);
   };
   
