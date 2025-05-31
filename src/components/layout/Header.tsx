@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useWallet } from '../../context/WalletContext';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon, History } from 'lucide-react';
 import Button from '../ui/Button';
 import Dialog from '../ui/Dialog';
 
@@ -30,6 +30,10 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
     } else {
       connectWallet();
     }
+  };
+
+  const handleTransactionHistory = () => {
+    console.log('Viewing transaction history for address:', address);
   };
   
   return (
@@ -76,6 +80,17 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
+            
+            {/* Transaction History button - only shown when connected */}
+            {isConnected && (
+              <button
+                onClick={handleTransactionHistory}
+                className="ml-4 p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                title="Transaction History"
+              >
+                <History size={20} />
+              </button>
+            )}
             
             {/* Connect wallet button */}
             <Button 
@@ -126,6 +141,16 @@ const Header: React.FC<HeaderProps> = ({ setActivePage, activePage }) => {
                 setMobileMenuOpen(false);
               }}
             />
+            {isConnected && (
+              <MobileNavItem 
+                label="Transaction History" 
+                isActive={false} 
+                onClick={() => {
+                  handleTransactionHistory();
+                  setMobileMenuOpen(false);
+                }}
+              />
+            )}
             <div className="pt-4">
               <Button 
                 className="w-full"
