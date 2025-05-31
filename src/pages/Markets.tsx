@@ -14,15 +14,29 @@ const Markets: React.FC = () => {
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [orderBook, setOrderBook] = useState(generateOrderBook());
+  const [tradeType, setTradeType] = useState<'call' | 'put'>('call');
+  const [tradeAction, setTradeAction] = useState<'buy' | 'sell'>('buy');
   
-  // Regenerate order book when event or timeline changes
   useEffect(() => {
     if (selectedEvent && selectedTimeline) {
       setOrderBook(generateOrderBook());
     }
   }, [selectedEvent, selectedTimeline]);
-  
-  const handleOptionClick = (option: OptionType) => {
+
+  const handleOptionClick = (strike: number, type: 'call' | 'put', action: 'buy' | 'sell') => {
+    setTradeType(type);
+    setTradeAction(action);
+    const option: OptionType = {
+      id: `${type}-${strike}`,
+      eventId: selectedEvent?.id || '',
+      timeline: selectedTimeline || '',
+      strike: strike,
+      premium: type === 'call' ? 0.0225 : 0.0023,
+      expiryDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 3 weeks from now
+      type: type,
+      collateral: strike * 0.1, // 10% collateral requirement
+      description: `${type.toUpperCase()} option at strike $${strike.toLocaleString()}`
+    };
     setSelectedOption(option);
     setIsTradeModalOpen(true);
   };
@@ -167,10 +181,16 @@ const Markets: React.FC = () => {
                       {/* Calls side */}
                       <td className="py-2 text-center">{row.call.size.toFixed(1)}</td>
                       <td className="py-2 text-center">{row.call.iv.toFixed(1)}%</td>
-                      <td className="py-2 text-center text-green-600 dark:text-green-400">
+                      <td 
+                        className="py-2 text-center text-green-600 dark:text-green-400 cursor-pointer hover:underline"
+                        onClick={() => handleOptionClick(row.strike, 'call', 'sell')}
+                      >
                         {row.call.bid.toFixed(4)}
                       </td>
-                      <td className="py-2 text-center text-red-600 dark:text-red-400">
+                      <td 
+                        className="py-2 text-center text-red-600 dark:text-red-400 cursor-pointer hover:underline"
+                        onClick={() => handleOptionClick(row.strike, 'call', 'buy')}
+                      >
                         {row.call.ask.toFixed(4)}
                       </td>
                       <td className="py-2 text-center">{row.call.ivAsk.toFixed(1)}%</td>
@@ -184,10 +204,16 @@ const Markets: React.FC = () => {
                       {/* Puts side */}
                       <td className="py-2 text-center">{row.put.size.toFixed(1)}</td>
                       <td className="py-2 text-center">{row.put.iv.toFixed(1)}%</td>
-                      <td className="py-2 text-center text-green-600 dark:text-green-400">
+                      <td 
+                        className="py-2 text-center text-green-600 dark:text-green-400 cursor-pointer hover:underline"
+                        onClick={() => handleOptionClick(row.strike, 'put', 'sell')}
+                      >
                         {row.put.bid.toFixed(4)}
                       </td>
-                      <td className="py-2 text-center text-red-600 dark:text-red-400">
+                      <td 
+                        className="py-2 text-center text-red-600 dark:text-red-400 cursor-pointer hover:underline"
+                        onClick={() => handleOptionClick(row.strike, 'put', 'buy')}
+                      >
                         {row.put.ask.toFixed(4)}
                       </td>
                       <td className="py-2 text-center">{row.put.ivAsk.toFixed(1)}%</td>
@@ -227,6 +253,7 @@ const Markets: React.FC = () => {
             setIsTradeModalOpen(false);
             setSelectedOption(null);
           }}
+          initialSide={tradeAction}
         />
       )}
     </div>

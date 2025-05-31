@@ -7,11 +7,17 @@ type TradeModalProps = {
   option: OptionType;
   isOpen: boolean;
   onClose: () => void;
+  initialSide?: 'buy' | 'sell';
 };
 
-const TradeModal: React.FC<TradeModalProps> = ({ option, isOpen, onClose }) => {
+const TradeModal: React.FC<TradeModalProps> = ({ 
+  option, 
+  isOpen, 
+  onClose,
+  initialSide = 'buy'
+}) => {
   const [amount, setAmount] = useState('1');
-  const [side, setSide] = useState<'buy' | 'sell'>('buy');
+  const [side, setSide] = useState<'buy' | 'sell'>(initialSide);
   
   if (!isOpen) return null;
   
@@ -19,11 +25,11 @@ const TradeModal: React.FC<TradeModalProps> = ({ option, isOpen, onClose }) => {
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50\" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md p-6 m-4">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-foreground">
-            Trade {option.type.toUpperCase()} Option
+            Trade {option.type.toUpperCase()} Option at ${option.strike.toLocaleString()}
           </h3>
           <button
             onClick={onClose}
@@ -71,15 +77,23 @@ const TradeModal: React.FC<TradeModalProps> = ({ option, isOpen, onClose }) => {
           <div className="bg-muted rounded-lg p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Premium</span>
-              <span className="text-foreground">${option.premium.toLocaleString()}</span>
+              <span className="text-foreground">${option.premium.toFixed(4)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Quantity</span>
               <span className="text-foreground">{amount}</span>
             </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Strike Price</span>
+              <span className="text-foreground">${option.strike.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Collateral Required</span>
+              <span className="text-foreground">${option.collateral.toLocaleString()}</span>
+            </div>
             <div className="flex justify-between font-medium pt-2 border-t border-border">
-              <span>Total</span>
-              <span>${total.toLocaleString()}</span>
+              <span>Total Cost</span>
+              <span>${total.toFixed(4)}</span>
             </div>
           </div>
           
