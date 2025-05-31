@@ -146,7 +146,7 @@ const Markets: React.FC = () => {
           <div className="bg-card rounded-lg shadow-md p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-card-foreground">
-                BTC/USDC order book expiring in 3 weeks.
+                BTC/USDC order book expiring on 27th June 2025
               </h2>
             </div>
             
