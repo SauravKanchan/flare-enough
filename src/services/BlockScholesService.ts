@@ -13,7 +13,7 @@ type BlockScholesResponse = {
 
 export async function getOptionPrice(strike: number, type: 'C' | 'P'): Promise<number> {
   try {
-    const response = await fetch('https://prod-data.blockscholes.com/api/v1/price/mark', {
+    const response = await fetch('/blockscholes-api/api/v1/price/mark', {
       method: 'POST',
       headers: {
         'X-API-Key': 'VCF0HVhT3l421hmiTezkD5XZDEpU21qO7pLKKXSA',

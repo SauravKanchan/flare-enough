@@ -7,4 +7,13 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    proxy: {
+      '/blockscholes-api': {
+        target: 'https://prod-data.blockscholes.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/blockscholes-api/, ''),
+      },
+    },
+  },
 });
