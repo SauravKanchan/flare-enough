@@ -7,11 +7,13 @@ import Footer from './components/layout/Footer';
 import Home from './pages/Home';
 import Markets from './pages/Markets';
 import Events from './pages/Events';
+import { NotificationProvider } from "@blockscout/app-sdk";
 
 function App() {
   const [activePage, setActivePage] = useState<'home' | 'markets' | 'events'>('home');
   
   return (
+  <NotificationProvider>
     <ThemeProvider>
       <WalletProvider>
         <MarketProvider>
@@ -29,6 +31,7 @@ function App() {
         </MarketProvider>
       </WalletProvider>
     </ThemeProvider>
+  </NotificationProvider>
   );
 }
 

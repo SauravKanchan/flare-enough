@@ -5,12 +5,14 @@ import Card from '../components/ui/Card';
 import { events } from '../data/mockData';
 import { getTimelineLabel } from '../utils/general';
 import { useMarket } from '../context/MarketContext';
+import { useNotification } from "@blockscout/app-sdk";
 
 type HeaderProps = {
   setActivePage: (page: 'home' | 'markets' | 'events') => void;
 };
 
 const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
+  const { openTxToast } = useNotification();
   const { selectEvent, selectTimeline } = useMarket();
   const featuredEvents = events.filter(event => !event.resolved).slice(0, 3);
 
