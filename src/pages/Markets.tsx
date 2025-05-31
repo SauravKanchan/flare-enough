@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMarket } from '../context/MarketContext';
 import TimelineSelector from '../components/ui/TimelineSelector';
 import { TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
@@ -6,16 +6,21 @@ import Card from '../components/ui/Card';
 import TradeModal from '../components/ui/TradeModal';
 import { OptionType } from '../types';
 import Button from '../components/ui/Button';
+import { generateOrderBook } from '../utils/marketDataGenerator';
 
 const Markets: React.FC = () => {
   const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline, events, loading, error } = useMarket();
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [orderBook, setOrderBook] = useState(generateOrderBook());
   
-  // Separate options into calls and puts
-  const calls = activeOptions.filter(opt => opt.type === 'call');
-  const puts = activeOptions.filter(opt => opt.type === 'put');
+  // Regenerate order book when event or timeline changes
+  useEffect(() => {
+    if (selectedEvent && selectedTimeline) {
+      setOrderBook(generateOrderBook());
+    }
+  }, [selectedEvent, selectedTimeline]);
   
   const handleOptionClick = (option: OptionType) => {
     setSelectedOption(option);
@@ -157,60 +162,38 @@ const Markets: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.from(new Set([...calls, ...puts].map(opt => opt.strike)))
-                    .sort((a, b) => b - a)
-                    .map(strike => {
-                      const call = calls.find(opt => opt.strike === strike);
-                      const put = puts.find(opt => opt.strike === strike);
-                      return (
-                        <tr key={strike} className="hover:bg-accent/50">
-                          {/* Calls side */}
-                          <td 
-                            colSpan={6} 
-                            className="py-2 cursor-pointer hover:bg-accent"
-                            onClick={() => call && handleOptionClick(call)}
-                          >
-                            <div className="flex justify-around">
-                              <span>{call?.collateral || '-'}</span>
-                              <span>32.5%</span>
-                              <span className="text-green-600 dark:text-green-400">
-                                {call?.premium.toFixed(4) || '-'}
-                              </span>
-                              <span className="text-red-600 dark:text-red-400">
-                                {call ? (call.premium * 1.02).toFixed(4) : '-'}
-                              </span>
-                              <span>33.1%</span>
-                              <span>{call?.collateral || '-'}</span>
-                            </div>
-                          </td>
-                          
-                          {/* Strike Price */}
-                          <td className="py-2 font-medium text-center border-x border-border">
-                            {strike.toLocaleString()}
-                          </td>
-                          
-                          {/* Puts side */}
-                          <td 
-                            colSpan={6}
-                            className="py-2 cursor-pointer hover:bg-accent"
-                            onClick={() => put && handleOptionClick(put)}
-                          >
-                            <div className="flex justify-around">
-                              <span>{put?.collateral || '-'}</span>
-                              <span>31.8%</span>
-                              <span className="text-green-600 dark:text-green-400">
-                                {put?.premium.toFixed(4) || '-'}
-                              </span>
-                              <span className="text-red-600 dark:text-red-400">
-                                {put ? (put.premium * 1.02).toFixed(4) : '-'}
-                              </span>
-                              <span>32.4%</span>
-                              <span>{put?.collateral || '-'}</span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                  {orderBook.map((row, index) => (
+                    <tr key={index} className="hover:bg-accent/50">
+                      {/* Calls side */}
+                      <td className="py-2 text-center">{row.call.size.toFixed(1)}</td>
+                      <td className="py-2 text-center">{row.call.iv.toFixed(1)}%</td>
+                      <td className="py-2 text-center text-green-600 dark:text-green-400">
+                        {row.call.bid.toFixed(4)}
+                      </td>
+                      <td className="py-2 text-center text-red-600 dark:text-red-400">
+                        {row.call.ask.toFixed(4)}
+                      </td>
+                      <td className="py-2 text-center">{row.call.ivAsk.toFixed(1)}%</td>
+                      <td className="py-2 text-center">{row.call.askSize.toFixed(1)}</td>
+                      
+                      {/* Strike Price */}
+                      <td className="py-2 font-medium text-center border-x border-border">
+                        {row.strike.toLocaleString()}
+                      </td>
+                      
+                      {/* Puts side */}
+                      <td className="py-2 text-center">{row.put.size.toFixed(1)}</td>
+                      <td className="py-2 text-center">{row.put.iv.toFixed(1)}%</td>
+                      <td className="py-2 text-center text-green-600 dark:text-green-400">
+                        {row.put.bid.toFixed(4)}
+                      </td>
+                      <td className="py-2 text-center text-red-600 dark:text-red-400">
+                        {row.put.ask.toFixed(4)}
+                      </td>
+                      <td className="py-2 text-center">{row.put.ivAsk.toFixed(1)}%</td>
+                      <td className="py-2 text-center">{row.put.askSize.toFixed(1)}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
