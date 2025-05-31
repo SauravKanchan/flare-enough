@@ -7,6 +7,7 @@ import TradeModal from '../components/ui/TradeModal';
 import { OptionType } from '../types';
 import Button from '../components/ui/Button';
 import { generateOrderBook } from '../utils/marketDataGenerator';
+import { getOptionPrice } from '../services/BlockScholesService';
 
 const Markets: React.FC = () => {
   const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline, events, loading, error } = useMarket();
@@ -23,22 +24,31 @@ const Markets: React.FC = () => {
     }
   }, [selectedEvent, selectedTimeline]);
 
-  const handleOptionClick = (strike: number, type: 'call' | 'put', action: 'buy' | 'sell') => {
+  const handleOptionClick = async (strike: number, type: 'call' | 'put', action: 'buy' | 'sell') => {
     setTradeType(type);
     setTradeAction(action);
-    const option: OptionType = {
-      id: `${type}-${strike}`,
-      eventId: selectedEvent?.id || '',
-      timeline: selectedTimeline || '',
-      strike: strike,
-      premium: type === 'call' ? 0.0225 : 0.0023,
-      expiryDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 3 weeks from now
-      type: type,
-      collateral: strike * 0.1, // 10% collateral requirement
-      description: `${type.toUpperCase()} option at strike $${strike.toLocaleString()}`
-    };
-    setSelectedOption(option);
-    setIsTradeModalOpen(true);
+    
+    try {
+      // Get premium from BlockScholes API
+      const premium = await getOptionPrice(strike, type === 'call' ? 'C' : 'P');
+      
+      const option: OptionType = {
+        id: `${type}-${strike}`,
+        eventId: selectedEvent?.id || '',
+        timeline: selectedTimeline || '',
+        strike: strike,
+        premium: premium,
+        expiryDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 3 weeks from now
+        type: type,
+        collateral: strike * 0.1, // 10% collateral requirement
+        description: `${type.toUpperCase()} option at strike $${strike.toLocaleString()}`
+      };
+      
+      setSelectedOption(option);
+      setIsTradeModalOpen(true);
+    } catch (error) {
+      console.error('Error fetching option premium:', error);
+    }
   };
 
   const getTimelineLabel = (timeline: string) => {
