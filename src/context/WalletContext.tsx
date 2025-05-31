@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
+import { NETWORK, ERRORS } from '../config';
 
 type WalletContextType = {
   isConnected: boolean;
@@ -19,12 +20,10 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
 
   useEffect(() => {
-    // Check if MetaMask is installed
     if (typeof window.ethereum !== 'undefined') {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       setProvider(provider);
 
-      // Handle account changes
       window.ethereum.on('accountsChanged', (accounts: string[]) => {
         if (accounts.length > 0) {
           setAddress(accounts[0]);
@@ -35,7 +34,6 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       });
 
-      // Handle chain changes
       window.ethereum.on('chainChanged', () => {
         window.location.reload();
       });
@@ -49,13 +47,21 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     try {
-      // Request account access
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      
+      // Check if we're on the correct network
+      const network = await provider.getNetwork();
+      if (network.chainId.toString() !== NETWORK.COSTON.chainId) {
+        alert(ERRORS.NETWORK_SWITCH);
+        return;
+      }
+
       setAddress(accounts[0]);
       setSigner(provider.getSigner());
       setIsConnected(true);
     } catch (error) {
       console.error('Error connecting wallet:', error);
+      alert(ERRORS.WALLET_CONNECTION);
     }
   };
 
