@@ -75,7 +75,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
     }
 
     // Only allow withdrawal if the system is not in pending state
-    function withdraw() external nonReentrant {
+    function withdraw() public nonReentrant {
         if (status == Status.Pending) {
             revert("Cannot withdraw during pending state");
         } else if (status == Status.Aborted) {
@@ -93,6 +93,55 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         }
     }
 
+    function _processWithdrawal(address user) internal {
+        if (status == Status.Pending) {
+            revert("Cannot withdraw during pending state");
+        } else if (status == Status.Aborted) {
+            uint256 usdcAmount = deposits[user];
+            if (usdcAmount > 0) {
+                deposits[user] = 0;
+                usdcToken.transfer(user, usdcAmount);
+                emit Withdrawn(user, usdcAmount);
+            }
+        } else {
+            uint256 usdcAmount = virtualBalances[user];
+            if (usdcAmount > 0) {
+                virtualBalances[user] = 0;
+                usdcToken.transfer(user, usdcAmount);
+                emit Withdrawn(user, usdcAmount);
+            }
+        }
+    }
+
+    function depositAndMintCall(
+        uint256 premiumUSDC,
+        address seller,
+        uint256 strikePriceUSDC,
+        uint256 quantityXrp,
+        uint256 expiry
+    ) public pending {
+        // Deposit USDC before minting the option
+        depositUsdc(premiumUSDC);
+
+        // Mint the call option
+        mintCallOption(premiumUSDC, seller, strikePriceUSDC, quantityXrp, expiry);
+    }
+
+    function depositAndMintPut(
+        uint256 premiumUSDC,
+        address seller,
+        uint256 strikePriceUSDC,
+        uint256 quantityXrp,
+        uint256 expiry
+    ) public pending {
+        // Deposit USDC before minting the option
+        depositUsdc(premiumUSDC);
+
+        // Mint the put option
+        mintPutOption(premiumUSDC, seller, strikePriceUSDC, quantityXrp, expiry);
+    }
+
+
     // Mint a call option, uses seller's USDC without their approval for testnet purpose
     function mintCallOption(
         uint256 premiumUSDC,
@@ -100,12 +149,13 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         uint256 strikePriceUSDC,
         uint256 quantityXrp,
         uint256 expiry
-    ) external pending {
+    ) public pending {
         address buyer = msg.sender;
         require(seller != address(0), "Invalid seller");
         require(expiry > block.timestamp, "Invalid expiry");
 
         // Buyer pays premium to seller
+        require(virtualBalances[buyer] >= premiumUSDC, "Buyer lacks funds to pay premium");
         virtualBalances[buyer] -= premiumUSDC;
         virtualBalances[seller] += premiumUSDC;
 
@@ -136,12 +186,13 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         uint256 strikePriceUSDC,
         uint256 quantityXrp,
         uint256 expiry
-    ) external notAborted {
+    ) public notAborted {
         address buyer = msg.sender;
         require(seller != address(0), "Invalid seller");
         require(expiry > block.timestamp, "Invalid expiry");
 
         // Buyer pays premium to seller
+        require(virtualBalances[buyer] >= premiumUSDC, "Buyer lacks funds to pay premium");
         virtualBalances[buyer] -= premiumUSDC;
         virtualBalances[seller] += premiumUSDC;
 
@@ -166,7 +217,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
 
     // List a call option for sale, requires the option to be owned by the caller and not exercised
     // Can list for any premium
-    function listCallOptionForSale(uint256 optionId, uint256 premiumUSDC) external notAborted {
+    function listCallOptionForSale(uint256 optionId, uint256 premiumUSDC) public notAborted {
         require(optionId < callOptions.length, "Invalid option ID");
         Option storage option = callOptions[optionId];
         require(option.buyer == msg.sender, "Not your option");
@@ -185,7 +236,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         emit OrderListed(orderId, true, optionId, msg.sender, premiumUSDC);
     }
 
-    function listPutOptionForSale(uint256 optionId, uint256 premiumUSDC) external notAborted {
+    function listPutOptionForSale(uint256 optionId, uint256 premiumUSDC) public notAborted {
         require(optionId < putOptions.length, "Invalid option ID");
         Option storage option = putOptions[optionId];
         require(option.buyer == msg.sender, "Not your option");
@@ -205,7 +256,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
     }
 
     // Buy an option from the order book, requires sufficient virtual balance
-    function buyOption(uint256 orderId) external notAborted {
+    function buyOption(uint256 orderId) public notAborted {
         require(orderId < orderBook.length, "Invalid order ID");
         Order storage order = orderBook[orderId];
         require(order.active, "Inactive order");
@@ -228,7 +279,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
     }
 
     // Exercise a call option, requires the option to be owned by the caller and not exercised
-    function exerciseCallOption(uint256 optionId) external notAborted {
+    function exerciseCallOption(uint256 optionId) public notAborted {
         require(optionId < callOptions.length, "Invalid option ID");
         Option storage option = callOptions[optionId];
 
@@ -254,7 +305,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         emit OrderFilled(optionId, msg.sender);
     }
 
-    function exercisePutOption(uint256 optionId) external notAborted {
+    function exercisePutOption(uint256 optionId) public notAborted {
         require(optionId < putOptions.length, "Invalid option ID");
         Option storage option = putOptions[optionId];
 
@@ -281,7 +332,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         emit OrderFilled(optionId, msg.sender); 
     }
 
-    function destroyCallOption(uint256 optionId) external notAborted {
+    function destroyCallOption(uint256 optionId) public notAborted {
         // must be expired and not exercised
         require(optionId < callOptions.length, "Invalid option ID");
         Option storage option = callOptions[optionId];
@@ -295,7 +346,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         virtualBalances[option.seller] += option.quantityXrp * option.strikePriceUSDC / one_xrp();
     }
 
-    function destroyPutOption(uint256 optionId) external notAborted {
+    function destroyPutOption(uint256 optionId) public notAborted {
         // must be expired and not exercised
         require(optionId < putOptions.length, "Invalid option ID");
         Option storage option = putOptions[optionId];
@@ -310,8 +361,25 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
     }
 
     // Performed by Factory
-    function abortSystem() external pending onlyRole(ADMIN_ROLE) {
+    function abortSystem() public pending onlyRole(ADMIN_ROLE) {
         status = Status.Aborted;
+
+        for (uint256 i = 0; i < callOptions.length; i++) {
+            Option storage option = callOptions[i];
+            _processWithdrawal(option.buyer);
+            _processWithdrawal(option.seller);
+        }
+
+        for (uint256 i = 0; i < putOptions.length; i++) {
+            Option storage option = putOptions[i];
+            _processWithdrawal(option.buyer);
+            _processWithdrawal(option.seller);
+        }
+
+        for (uint256 i = 0; i < orderBook.length; i++) {
+            Order storage order = orderBook[i];
+            _processWithdrawal(order.owner);
+        }
 
         delete callOptions;
         delete putOptions;
@@ -321,21 +389,21 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
     }
 
     // Performed by Factory
-    function continueSystem() external pending onlyRole(ADMIN_ROLE) {
+    function continueSystem() public pending onlyRole(ADMIN_ROLE) {
         status = Status.Continued;
 
         emit SystemContinued();
     }
 
-    function getCallOptionsLength() external view returns (uint256) {
+    function getCallOptionsLength() public view returns (uint256) {
         return callOptions.length;
     }
 
-    function getPutOptionsLength() external view returns (uint256) {
+    function getPutOptionsLength() public view returns (uint256) {
         return putOptions.length;
     }
 
-    function getOrderBookLength() external view returns (uint256) {
+    function getOrderBookLength() public view returns (uint256) {
         return orderBook.length;
     }
 
@@ -363,7 +431,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
     uint256 public testXrpPrice;
     int8 public testXrpDecimals;
     
-    function setTestXrpPrice(uint256 price, int8 decimals) external {
+    function setTestXrpPrice(uint256 price, int8 decimals) public {
         testXrpPrice = price;
         testXrpDecimals = decimals;
     }
