@@ -60,8 +60,8 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
                   <div className="flex items-center">
                     <Clock className="h-5 w-5 text-white" />
                     <div className="ml-2">
-                      <div className="text-white font-semibold">US Election 2024</div>
-                      <div className="text-xs text-gray-300">Ends in 127 days</div>
+                      <div className="text-white font-semibold">US Election 2025</div>
+                      <div className="text-xs text-gray-300">Ends in 27 days</div>
                     </div>
                   </div>
                   <div className="px-2 py-0.5 bg-white/10 rounded-full text-xs text-white">Active</div>
