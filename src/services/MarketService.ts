@@ -1,4 +1,8 @@
 import { EventType, OptionType, TradeType } from '../types';
+import * as flareEnoughContract from '../config/FlareEnough.json';
+import { Contract } from 'ethers';
+import { CONTRACTS, NETWORK } from '../config';
+import { ethers } from 'ethers';
 
 // Mock initial data
 const mockEvents: EventType[] = [];
@@ -10,7 +14,7 @@ const mockTrades: TradeType[] = [];
 
 class MarketService {
   private static instance: MarketService;
-  private events: EventType[] | null = null;
+  private events: any = null;
   private options: OptionType[] | null = null;
   private trades: TradeType[] | null = null;
 
@@ -37,8 +41,26 @@ class MarketService {
 
   public async getEvents(): Promise<EventType[]> {
     if (!this.events) {
-      const data = await this.fetchMarketData();
-      this.events = data.events;
+      const provider = new ethers.providers.JsonRpcProvider(NETWORK.COSTON.rpcUrl);
+      const contract = new Contract(
+        CONTRACTS.FLARE_ENOUGH,
+        flareEnoughContract.abi,
+        provider
+      );
+      const count = await contract.getMarketsCount();
+      this.events = [];
+      for (let i = 0; i < count; i++) {
+        const event = await contract.getMarket(i);
+        this.events.push({
+          id: i,
+          name: event[0],
+          description: event[1],
+          timelines: [event[2], event[3]], 
+          date: new Date(event[6] * 1000).toISOString(),
+          resolved: event[7],
+        });
+      }
+      console.log("Fetched events:", this.events);
     }
     return this.events;
   }

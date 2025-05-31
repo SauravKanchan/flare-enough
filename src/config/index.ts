@@ -3,10 +3,10 @@ export const NETWORK = {
   COSTON: {
     chainId: '114',
     name: 'Coston',
-    rpcUrl: 'https://coston-api.flare.network/ext/bc/C/rpc',
+    rpcUrl: 'https://coston2-api.flare.network/ext/C/rpc',
     blockExplorer: 'https://coston-explorer.flare.network',
     currency: {
-      name: 'Coston Flare',
+      name: 'Coston2 Flare',
       symbol: 'CFLR',
       decimals: 18
     }
@@ -15,9 +15,8 @@ export const NETWORK = {
 
 // Contract Addresses
 export const CONTRACTS = {
-  FLARE_ENOUGH: '0x1234567890123456789012345678901234567890', // Replace with actual address
-  TEST_USDC: '0x0987654321098765432109876543210987654321',    // Replace with actual address
-  CLEARING_HOUSE: '0x2468135790246813579024681357902468135790' // Replace with actual address
+  FLARE_ENOUGH: '0xEE2A903ffE787B243364925d1e2a07B6615475f4', // Replace with actual address
+  TEST_USDC: '0x0dbC84EAB46BC85740383Dc59FC7D775eb09806B',    // Replace with actual address
 };
 
 // API Configuration

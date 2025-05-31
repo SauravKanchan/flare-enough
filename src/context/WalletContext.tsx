@@ -47,6 +47,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     try {
+      // @ts-ignore
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       
       // Check if we're on the correct network

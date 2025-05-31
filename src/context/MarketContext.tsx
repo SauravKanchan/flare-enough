@@ -1,15 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { EventType, OptionType, TimelineType } from '../types';
+import { EventType, OptionType } from '../types';
 import MarketService from '../services/MarketService';
 
 type MarketContextType = {
   selectedEvent: EventType | null;
-  selectedTimeline: TimelineType | null;
+  selectedTimeline: string | null;
   activeOptions: OptionType[];
   events: EventType[];
   options: OptionType[];
   selectEvent: (eventId: string | null) => void;
-  selectTimeline: (timeline: TimelineType | null) => void;
+  selectTimeline: (timeline: string | null) => void;
   loading: boolean;
   error: string | null;
 };
@@ -18,7 +18,7 @@ const MarketContext = createContext<MarketContextType | undefined>(undefined);
 
 export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
-  const [selectedTimeline, setSelectedTimeline] = useState<TimelineType | null>(null);
+  const [selectedTimeline, setSelectedTimeline] = useState<string | null>(null);
   const [events, setEvents] = useState<EventType[]>([]);
   const [options, setOptions] = useState<OptionType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +62,7 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const selectTimeline = (timeline: TimelineType | null) => {
+  const selectTimeline = (timeline: string | null) => {
     setSelectedTimeline(timeline);
   };
 

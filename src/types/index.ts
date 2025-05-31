@@ -1,19 +1,17 @@
-export type TimelineType = 'rateHike' | 'rateHold' | 'btcUp' | 'btcDown' | 'trumpWins' | 'trumpLoses';
-
 export type EventType = {
   id: string;
   name: string;
   description: string;
   date: string; // ISO date string
-  timelines: TimelineType[];
+  timelines: string[];
   resolved: boolean;
-  outcome?: TimelineType;
+  outcome?: number; // 0 for pending, 1 for outcome1, 2 for outcome2
 };
 
 export type OptionType = {
   id: string;
   eventId: string;
-  timeline: TimelineType;
+  timeline: string;
   strike: number;
   premium: number;
   expiryDate: string; // ISO date string
