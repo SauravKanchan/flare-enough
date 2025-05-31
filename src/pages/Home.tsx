@@ -34,7 +34,7 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
               </h1>
               <p className="text-gray-300 text-lg mb-8 max-w-xl">
                 The first options DEX that lets you trade based on conditional real-world events. 
-                Place bets on what happens if Trump wins or loses, and only pay if your timeline comes true.
+                Place orders on what happens if Trump wins or loses, and only pay if your timeline comes true.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button 
