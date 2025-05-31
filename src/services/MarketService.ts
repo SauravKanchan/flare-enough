@@ -59,8 +59,10 @@ class MarketService {
           date: new Date(event[6] * 1000).toISOString(),
           resolved: event[7],
         });
+        this.events = Array.from(
+         new Map(this.events.map((item:any) => [item.id, item])).values()
+        );
       }
-      console.log("Fetched events:", this.events);
     }
     return this.events;
   }

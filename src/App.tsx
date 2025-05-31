@@ -15,7 +15,6 @@ function App() {
   const [activePage, setActivePage] = useState<'home' | 'markets' | 'events'>('home');
   
   return (
-      <React.StrictMode>
 
 <TransactionPopupProvider>
   <NotificationProvider>
@@ -38,7 +37,6 @@ function App() {
     </ThemeProvider>
   </NotificationProvider>
   </TransactionPopupProvider>
-  </React.StrictMode>
 
   );
 }
