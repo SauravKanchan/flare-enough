@@ -2,7 +2,6 @@ import React from 'react';
 import { ArrowRight, Clock, LineChart, Lock, RefreshCw, Layers } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import { events } from '../data/mockData';
 import { getTimelineLabel } from '../utils/general';
 import { useMarket } from '../context/MarketContext';
 import { useNotification } from "@blockscout/app-sdk";
@@ -13,7 +12,7 @@ type HeaderProps = {
 
 const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
   const { openTxToast } = useNotification();
-  const { selectEvent, selectTimeline } = useMarket();
+  const { events, selectEvent, selectTimeline, loading, error } = useMarket();
   const featuredEvents = events.filter(event => !event.resolved).slice(0, 3);
 
   const handleTimelineClick = (eventId: string, timeline: string) => {
@@ -159,19 +158,25 @@ const Home: React.FC<HeaderProps> = ({ setActivePage }) => {
             </div>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredEvents.map(event => (
-              <MarketCard 
-                key={event.id}
-                title={event.name}
-                description={event.description}
-                date={new Date(event.date).toLocaleDateString()}
-                active={!event.resolved}
-                timelines={event.timelines}
-                onTimelineClick={(timeline) => handleTimelineClick(event.id, timeline)}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center">Loading featured markets...</div>
+          ) : error ? (
+            <div className="text-center text-red-600">{error}</div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredEvents.map(event => (
+                <MarketCard 
+                  key={event.id}
+                  title={event.name}
+                  description={event.description}
+                  date={new Date(event.date).toLocaleDateString()}
+                  active={!event.resolved}
+                  timelines={event.timelines}
+                  onTimelineClick={(timeline) => handleTimelineClick(event.id, timeline)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
       

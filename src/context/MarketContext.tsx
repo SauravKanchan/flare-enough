@@ -1,13 +1,17 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { EventType, OptionType, TimelineType } from '../types';
-import { events, options } from '../data/mockData';
+import MarketService from '../services/MarketService';
 
 type MarketContextType = {
   selectedEvent: EventType | null;
   selectedTimeline: TimelineType | null;
   activeOptions: OptionType[];
+  events: EventType[];
+  options: OptionType[];
   selectEvent: (eventId: string | null) => void;
   selectTimeline: (timeline: TimelineType | null) => void;
+  loading: boolean;
+  error: string | null;
 };
 
 const MarketContext = createContext<MarketContextType | undefined>(undefined);
@@ -15,6 +19,31 @@ const MarketContext = createContext<MarketContextType | undefined>(undefined);
 export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const [selectedTimeline, setSelectedTimeline] = useState<TimelineType | null>(null);
+  const [events, setEvents] = useState<EventType[]>([]);
+  const [options, setOptions] = useState<OptionType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const marketService = MarketService.getInstance();
+        const [fetchedEvents, fetchedOptions] = await Promise.all([
+          marketService.getEvents(),
+          marketService.getOptions()
+        ]);
+        
+        setEvents(fetchedEvents);
+        setOptions(fetchedOptions);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to fetch market data');
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const selectEvent = (eventId: string | null) => {
     if (!eventId) {
@@ -26,7 +55,6 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const event = events.find(e => e.id === eventId) || null;
     setSelectedEvent(event);
     
-    // If event has timelines, select the first one by default
     if (event && event.timelines.length > 0) {
       setSelectedTimeline(event.timelines[0]);
     } else {
@@ -38,7 +66,6 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setSelectedTimeline(timeline);
   };
 
-  // Filter options based on selected event and timeline
   const activeOptions = options.filter(option => 
     selectedEvent && 
     option.eventId === selectedEvent.id && 
@@ -50,8 +77,12 @@ export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       selectedEvent,
       selectedTimeline,
       activeOptions,
+      events,
+      options,
       selectEvent,
-      selectTimeline
+      selectTimeline,
+      loading,
+      error
     }}>
       {children}
     </MarketContext.Provider>

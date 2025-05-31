@@ -1,7 +1,6 @@
 import React from 'react';
 import Card from '../components/ui/Card';
 import { EventType } from '../types';
-import { events } from '../data/mockData';
 import { Calendar, Clock, AlertTriangle } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { formatDistanceToNow } from '../utils/formatters';
@@ -9,7 +8,24 @@ import { getTimelineLabel } from '../utils/general';
 import { useMarket } from '../context/MarketContext';
 
 const Events: React.FC = () => {
-  const { selectEvent, selectTimeline } = useMarket();
+  const { events, selectEvent, selectTimeline, loading, error } = useMarket();
+  
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center">Loading events...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center text-red-600">{error}</div>
+      </div>
+    );
+  }
+
   const activeEvents = events.filter(event => !event.resolved);
   const resolvedEvents = events.filter(event => event.resolved);
 
