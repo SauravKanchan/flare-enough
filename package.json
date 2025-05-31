@@ -13,7 +13,7 @@
     "@blockscout/app-sdk": "^0.1.1",
     "ethers": "^5.7.2",
     "express": "^5.1.0",
-    "lucide-react": "^0.350.0",
+    "lucide-react": "^0.511.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
