@@ -76,10 +76,10 @@ const Markets: React.FC = () => {
                   <button
                     key={event.id}
                     className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors ${
-                      selectedEvent?.id.toString() === event.id.toString() ? 'bg-accent' : ''
+                      selectedEvent?.id === event.id ? 'bg-accent' : ''
                     }`}
                     onClick={() => {
-                      selectEvent(event.id.toString());
+                      selectEvent(event.id);
                       setIsDropdownOpen(false);
                     }}
                   >
