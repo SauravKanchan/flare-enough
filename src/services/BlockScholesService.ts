@@ -9,9 +9,15 @@ type BlockScholesResponse = {
   }>;
 };
 
+let BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+if (!BASE_URL) {
+  BASE_URL = "/blockscholes-api";
+}
+
 export async function getOptionPrice(strike: number, type: 'C' | 'P'): Promise<number> {
   try {
-    const response = await fetch('/blockscholes-api/api/v1/price/mark', {
+    const response = await fetch(`${BASE_URL}/api/v1/price/mark`, {
       method: 'POST',
       headers: {
         'X-API-Key': 'VCF0HVhT3l421hmiTezkD5XZDEpU21qO7pLKKXSA',
