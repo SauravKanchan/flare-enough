@@ -60,13 +60,8 @@ const TradeModal: React.FC<TradeModalProps> = ({
         TestUSDCABI.abi,
         signer
       );
-      const amountInWei = ethers.utils.parseUnits(amount, 6); // Assuming USDC has 6 decimals
-
-      // Approve USDC transfer
-      // const approveTx = await USDC.approve(CONTRACTS.FLARE_ENOUGH, amountInWei);
-      // await approveTx.wait();
-      // openTxToast("114", approveTx.hash);
-
+      const amountInWei = ethers.utils.parseUnits(String(total), 6); // Assuming USDC has 6 decimals
+      console.log('Amount in Wei:', amountInWei.toString());
       const contract = new ethers.Contract(
         CONTRACTS.FLARE_ENOUGH,
         FlareEnoughABI.abi,
@@ -86,6 +81,11 @@ const TradeModal: React.FC<TradeModalProps> = ({
         timelineAddress = marketData.clearingHouse2;
       }
 
+      // Approve USDC transfer
+      const approveTx = await USDC.approve(timelineAddress, amountInWei);
+      await approveTx.wait();
+      openTxToast("114", approveTx.hash);
+
       const timelineContract = new ethers.Contract(
         timelineAddress,
         TemporaryClearingHouseABI.abi,
@@ -98,13 +98,15 @@ const TradeModal: React.FC<TradeModalProps> = ({
       } else {
         function_name = 'depositAndMintPut';
       }
+      console.log(await timelineContract.getBtcPrice());
       const depositAndMintTx = await timelineContract[function_name](
-        ethers.utils.parseUnits(option.premium.toString(), 6),
+        amountInWei,
         "0x487A786F9F59c8996f13cb990e1e1e69a85E9857", // seller is kind of hardcoded for simplicity purpose
         ethers.utils.parseUnits(option.strike.toString(), 6),
-        ethers.utils.parseUnits(amount, 8),
+        ethers.utils.parseUnits(amount, 2),
         new Date("2025-06-27T08:00:00Z").getTime() / 1000, // expiry timestamp
       )
+      console.log('Deposit and Mint Transaction:', depositAndMintTx.hash);
       await depositAndMintTx.wait();
       openTxToast("114", depositAndMintTx.hash);
 

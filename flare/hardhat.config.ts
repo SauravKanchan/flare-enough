@@ -3,6 +3,7 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@nomiclabs/hardhat-web3";
 require("@nomiclabs/hardhat-truffle5");
 require("dotenv").config();
+require("hardhat-tracer");
 
 // Load environment variables
 const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "";
