@@ -21,6 +21,9 @@ const Markets: React.FC = () => {
   const [tradeType, setTradeType] = useState<'call' | 'put'>('call');
   const [tradeAction, setTradeAction] = useState<'buy' | 'sell'>('buy');
   
+  // Filter only active (unresolved) events
+  const activeEvents = events.filter(event => !event.resolved);
+  
   useEffect(() => {
     if (selectedEvent && selectedTimeline) {
       setOrderBook(generateOrderBook());
@@ -94,7 +97,7 @@ const Markets: React.FC = () => {
             
             {isDropdownOpen && (
               <div className="absolute z-10 w-full mt-2 bg-card border border-border rounded-lg shadow-lg">
-                {events.map((event) => (
+                {activeEvents.map((event) => (
                   <button
                     key={event.id}
                     className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors ${
