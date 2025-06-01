@@ -72,6 +72,18 @@ const Markets: React.FC = () => {
     }
   };
 
+  const handleEventSelect = (event: any) => {
+    selectEvent(event.id);
+    // For resolved events, select the winning timeline
+    // For unresolved events, select the first timeline
+    if (event.resolved) {
+      selectTimeline(event.timelines[event.resolved - 1]);
+    } else {
+      selectTimeline(event.timelines[0]);
+    }
+    setIsDropdownOpen(false);
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -114,10 +126,7 @@ const Markets: React.FC = () => {
                     className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors ${
                       selectedEvent?.id === event.id ? 'bg-accent' : ''
                     }`}
-                    onClick={() => {
-                      selectEvent(event.id);
-                      setIsDropdownOpen(false);
-                    }}
+                    onClick={() => handleEventSelect(event)}
                   >
                     <div className="flex justify-between items-center">
                       <div>
@@ -126,7 +135,7 @@ const Markets: React.FC = () => {
                           {new Date(event.date).toLocaleDateString()}
                         </div>
                       </div>
-                      {Boolean(event.resolved)  && (
+                      {Boolean(event.resolved) && (
                         <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs rounded-full">
                           Resolved
                         </span>
@@ -142,9 +151,9 @@ const Markets: React.FC = () => {
             <div className="flex gap-2">
               {selectedEvent.timelines.map((timeline, i) => {
                 // @ts-ignore
-                const isWinningTimeline = Boolean(selectedEvent.resolved) && selectedEvent.resolved -1 == i;
+                const isWinningTimeline = Boolean(selectedEvent.resolved) && selectedEvent.resolved - 1 === i;
                 // @ts-ignore
-                const isLosingTimeline = Boolean(selectedEvent.resolved) && selectedEvent.resolved - 1  !== i;
+                const isLosingTimeline = Boolean(selectedEvent.resolved) && selectedEvent.resolved - 1 !== i;
                 
                 return (
                   <div key={timeline} className="relative">
