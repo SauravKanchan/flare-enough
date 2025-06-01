@@ -21,9 +21,6 @@ const Markets: React.FC = () => {
   const [tradeType, setTradeType] = useState<'call' | 'put'>('call');
   const [tradeAction, setTradeAction] = useState<'buy' | 'sell'>('buy');
   
-  // Filter only active (unresolved) events
-  const activeEvents = events.filter(event => !event.resolved);
-  
   useEffect(() => {
     if (selectedEvent && selectedTimeline) {
       setOrderBook(generateOrderBook());
@@ -97,7 +94,7 @@ const Markets: React.FC = () => {
             
             {isDropdownOpen && (
               <div className="absolute z-10 w-full mt-2 bg-card border border-border rounded-lg shadow-lg">
-                {activeEvents.map((event) => (
+                {events.map((event) => (
                   <button
                     key={event.id}
                     className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors ${
@@ -108,9 +105,18 @@ const Markets: React.FC = () => {
                       setIsDropdownOpen(false);
                     }}
                   >
-                    <div className="font-medium text-card-foreground">{event.name}</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {new Date(event.date).toLocaleDateString()}
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium text-card-foreground">{event.name}</div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {new Date(event.date).toLocaleDateString()}
+                        </div>
+                      </div>
+                      {event.resolved && (
+                        <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs rounded-full">
+                          Resolved
+                        </span>
+                      )}
                     </div>
                   </button>
                 ))}
@@ -120,16 +126,31 @@ const Markets: React.FC = () => {
 
           {selectedEvent && (
             <div className="flex gap-2">
-              {selectedEvent.timelines.map((timeline) => (
-                <Button
-                  key={timeline}
-                  variant={selectedTimeline === timeline ? 'primary' : 'outline'}
-                  onClick={() => selectTimeline(timeline)}
-                  className="whitespace-nowrap"
-                >
-                  {getTimelineLabel(timeline)}
-                </Button>
-              ))}
+              {selectedEvent.timelines.map((timeline) => {
+                const isWinningTimeline = selectedEvent.resolved && selectedEvent.outcome === timeline;
+                const isLosingTimeline = selectedEvent.resolved && selectedEvent.outcome !== timeline;
+                
+                return (
+                  <div key={timeline} className="relative">
+                    <Button
+                      variant={selectedTimeline === timeline ? 'primary' : 'outline'}
+                      onClick={() => !isLosingTimeline && selectTimeline(timeline)}
+                      className={`whitespace-nowrap ${isLosingTimeline ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={isLosingTimeline}
+                    >
+                      {getTimelineLabel(timeline)}
+                    </Button>
+                    {isWinningTimeline && (
+                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
+                    )}
+                    {isLosingTimeline && (
+                      <div className="absolute top-full left-0 right-0 mt-1 text-xs text-center text-red-500">
+                        Timeline invalid
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
