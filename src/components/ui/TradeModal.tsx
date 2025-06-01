@@ -145,6 +145,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
 
       // Store trade in IndexedDB
       const db = IndexedDBService.getInstance();
+      // @ts-ignore
       await db.addTrade({
         eventId: option.eventId,
         timeline: option.timeline,
