@@ -9,6 +9,7 @@ import * as TemporaryClearingHouseABI from '../../config/TemporaryClearingHouse.
 import { CONTRACTS } from '../../config/index';
 import { useNotification } from "@blockscout/app-sdk";
 import IndexedDBService from '../../services/IndexedDBService';
+import confetti from 'canvas-confetti';
 
 type TradeModalProps = {
   option: OptionType;
@@ -33,6 +34,54 @@ const TradeModal: React.FC<TradeModalProps> = ({
   if (!isOpen) return null;
   
   const total = side === 'buy' ? parseFloat(amount) * option.premium : parseFloat(amount) * option.collateral;
+
+  const triggerConfetti = () => {
+    const count = 200;
+    const defaults = {
+      origin: { y: 0.7 },
+      zIndex: 9999
+    };
+
+    function fire(particleRatio: number, opts: confetti.Options) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio),
+      });
+    }
+
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+      origin: { x: 0.2 }
+    });
+
+    fire(0.2, {
+      spread: 60,
+      origin: { x: 0.5 }
+    });
+
+    fire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 0.8,
+      origin: { x: 0.8 }
+    });
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 25,
+      decay: 0.92,
+      scalar: 1.2,
+      origin: { x: 0.4 }
+    });
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 45,
+      origin: { x: 0.6 }
+    });
+  };
 
   const handleTrade = async () => {
     if (!signer) {
@@ -105,6 +154,9 @@ const TradeModal: React.FC<TradeModalProps> = ({
         premium: option.premium,
         amount: parseFloat(amount),
       });
+
+      // Trigger confetti animation
+      triggerConfetti();
       
       onClose();
     } catch (error) {
