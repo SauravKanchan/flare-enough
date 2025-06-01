@@ -9,7 +9,6 @@ import { OptionType } from '../types';
 import Button from '../components/ui/Button';
 import { generateOrderBook } from '../utils/marketDataGenerator';
 import { getOptionPrice } from '../services/BlockScholesService';
-import { getTimelineLabel } from '../utils/general';
 
 const Markets: React.FC = () => {
   const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline, events, loading, error } = useMarket();
@@ -127,7 +126,7 @@ const Markets: React.FC = () => {
                           {new Date(event.date).toLocaleDateString()}
                         </div>
                       </div>
-                      {event.resolved && (
+                      {Boolean(event.resolved)  && (
                         <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs rounded-full">
                           Resolved
                         </span>
@@ -141,9 +140,11 @@ const Markets: React.FC = () => {
 
           {selectedEvent && (
             <div className="flex gap-2">
-              {selectedEvent.timelines.map((timeline) => {
-                const isWinningTimeline = selectedEvent.resolved && selectedEvent.outcome === timeline;
-                const isLosingTimeline = selectedEvent.resolved && selectedEvent.outcome !== timeline;
+              {selectedEvent.timelines.map((timeline, i) => {
+                // @ts-ignore
+                const isWinningTimeline = Boolean(selectedEvent.resolved) && selectedEvent.resolved -1 == i;
+                // @ts-ignore
+                const isLosingTimeline = Boolean(selectedEvent.resolved) && selectedEvent.resolved - 1  !== i;
                 
                 return (
                   <div key={timeline} className="relative">
@@ -153,7 +154,7 @@ const Markets: React.FC = () => {
                       className={`whitespace-nowrap ${isLosingTimeline ? 'opacity-50 cursor-not-allowed' : ''}`}
                       disabled={isLosingTimeline}
                     >
-                      {getTimelineLabel(timeline)}
+                      {timeline}
                       {isWinningTimeline && (
                         <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
                       )}
