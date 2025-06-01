@@ -10,10 +10,12 @@ import Button from '../components/ui/Button';
 import { generateOrderBook } from '../utils/marketDataGenerator';
 import { getOptionPrice } from '../services/BlockScholesService';
 import { getTimelineLabel } from '../utils/general';
+import { useNotification } from "@blockscout/app-sdk";
 
 const Markets: React.FC = () => {
   const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline, events, loading, error } = useMarket();
   const { isConnected, signer, connectWallet } = useWallet();
+  const { openToast } = useNotification();
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -29,6 +31,18 @@ const Markets: React.FC = () => {
       setOrderBook(generateOrderBook());
     }
   }, [selectedEvent, selectedTimeline]);
+
+  const handleTimelineClick = (timeline: string) => {
+    if (selectedEvent?.resolved && timeline !== selectedEvent.outcome) {
+      openToast({
+        type: 'error',
+        title: 'Invalid Timeline',
+        description: 'This timeline is no longer available as the event has been resolved.'
+      });
+      return;
+    }
+    selectTimeline(timeline);
+  };
 
   const handleOptionClick = async (strike: number, type: 'call' | 'put', action: 'buy' | 'sell') => {
     if (!isConnected) {
@@ -124,7 +138,8 @@ const Markets: React.FC = () => {
                 <Button
                   key={timeline}
                   variant={selectedTimeline === timeline ? 'primary' : 'outline'}
-                  onClick={() => selectTimeline(timeline)}
+                  onClick={() => handleTimelineClick(timeline)}
+                  disabled={selectedEvent.resolved && timeline !== selectedEvent.outcome}
                   className="whitespace-nowrap"
                 >
                   {getTimelineLabel(timeline)}
