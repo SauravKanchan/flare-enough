@@ -1,5 +1,5 @@
 import React from 'react';
-import { TradeHistoryType } from '../../types';
+import { TradeHistoryType } from '../types';
 import { formatDistanceToNow } from '../../utils/formatters';
 
 type TradeHistoryTableProps = {
@@ -60,7 +60,7 @@ const TradeHistoryTable: React.FC<TradeHistoryTableProps> = ({ trades }) => {
                 ${(trade.premium * trade.amount).toFixed(4)}
               </td>
               <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
-                {formatDistanceToNow(new Date(trade.timestamp))}
+                {new Date(trade.timestamp).toLocaleString()}
               </td>
             </tr>
           ))}
