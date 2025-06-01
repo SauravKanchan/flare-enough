@@ -8,7 +8,7 @@ import * as TestUSDCABI from '../../config/TestUSDC.json';
 import * as TemporaryClearingHouseABI from '../../config/TemporaryClearingHouse.json';
 import { CONTRACTS } from '../../config/index';
 import { useNotification } from "@blockscout/app-sdk";
-
+import IndexedDBService from '../../services/IndexedDBService';
 
 type TradeModalProps = {
   option: OptionType;
@@ -47,7 +47,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
         TestUSDCABI.abi,
         signer
       );
-      const amountInWei = ethers.utils.parseUnits(String(total), 6); // Assuming USDC has 6 decimals
+      const amountInWei = ethers.utils.parseUnits(String(total), 6);
       console.log('Amount in Wei:', amountInWei.toString());
       const contract = new ethers.Contract(
         CONTRACTS.FLARE_ENOUGH,
@@ -55,12 +55,10 @@ const TradeModal: React.FC<TradeModalProps> = ({
         signer
       );
 
-      // Get the market data from eventId and timeline
       const eventId = parseInt(option.eventId) - 1;
       const marketData = await contract.getMarket(eventId);
       console.log('Market Data:', marketData);
 
-      // figure out which timeline to use
       let timelineAddress;
       if (marketData.outcome1 === option.timeline) {
         timelineAddress = marketData.clearingHouse1;
@@ -68,7 +66,6 @@ const TradeModal: React.FC<TradeModalProps> = ({
         timelineAddress = marketData.clearingHouse2;
       }
 
-      // Approve USDC transfer
       const approveTx = await USDC.approve(timelineAddress, amountInWei);
       await approveTx.wait();
       openTxToast("114", approveTx.hash);
@@ -85,25 +82,28 @@ const TradeModal: React.FC<TradeModalProps> = ({
       } else {
         function_name = 'depositAndMintPut';
       }
-      console.log(await timelineContract.getBtcPrice());
+      
       const depositAndMintTx = await timelineContract[function_name](
         amountInWei,
-        "0x487A786F9F59c8996f13cb990e1e1e69a85E9857", // seller is kind of hardcoded for simplicity purpose
+        "0x487A786F9F59c8996f13cb990e1e1e69a85E9857",
         ethers.utils.parseUnits(option.strike.toString(), 6),
         ethers.utils.parseUnits(amount, 2),
-        new Date("2025-06-27T08:00:00Z").getTime() / 1000, // expiry timestamp
-      )
-      console.log('Deposit and Mint Transaction:', depositAndMintTx.hash);
+        new Date("2025-06-27T08:00:00Z").getTime() / 1000,
+      );
+      
       await depositAndMintTx.wait();
       openTxToast("114", depositAndMintTx.hash);
 
-      console.log('Trade executed:', {
+      // Store trade in IndexedDB
+      const db = IndexedDBService.getInstance();
+      await db.addTrade({
         eventId: option.eventId,
         timeline: option.timeline,
-        option,
-        side,
-        amount,
-        total
+        type: option.type,
+        side: side,
+        strike: option.strike,
+        premium: option.premium,
+        amount: parseFloat(amount),
       });
       
       onClose();

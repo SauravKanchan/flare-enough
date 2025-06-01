@@ -5,10 +5,12 @@ import TimelineSelector from '../components/ui/TimelineSelector';
 import { TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
 import Card from '../components/ui/Card';
 import TradeModal from '../components/ui/TradeModal';
-import { OptionType } from '../types';
+import TradeHistoryTable from '../components/ui/TradeHistoryTable';
+import { OptionType, TradeHistoryType } from '../types';
 import Button from '../components/ui/Button';
 import { generateOrderBook } from '../utils/marketDataGenerator';
 import { getOptionPrice } from '../services/BlockScholesService';
+import IndexedDBService from '../services/IndexedDBService';
 
 const Markets: React.FC = () => {
   const { selectedEvent, selectedTimeline, activeOptions, selectEvent, selectTimeline, events, loading, error } = useMarket();
@@ -19,12 +21,22 @@ const Markets: React.FC = () => {
   const [orderBook, setOrderBook] = useState(generateOrderBook());
   const [tradeType, setTradeType] = useState<'call' | 'put'>('call');
   const [tradeAction, setTradeAction] = useState<'buy' | 'sell'>('buy');
+  const [tradeHistory, setTradeHistory] = useState<TradeHistoryType[]>([]);
   
   useEffect(() => {
     if (selectedEvent && selectedTimeline) {
       setOrderBook(generateOrderBook());
+      loadTradeHistory();
     }
   }, [selectedEvent, selectedTimeline]);
+
+  const loadTradeHistory = async () => {
+    if (selectedEvent && selectedTimeline) {
+      const db = IndexedDBService.getInstance();
+      const trades = await db.getTradesByEventAndTimeline(selectedEvent.id, selectedTimeline);
+      setTradeHistory(trades);
+    }
+  };
 
   const handleOptionClick = async (strike: number, type: 'call' | 'put', action: 'buy' | 'sell') => {
     if (!isConnected) {
@@ -164,10 +176,10 @@ const Markets: React.FC = () => {
                       disabled={isLosingTimeline}
                     >
                       {timeline}
-                      {isWinningTimeline && (
-                        <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
-                      )}
                     </Button>
+                    {isWinningTimeline && (
+                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
+                    )}
                     {isLosingTimeline && (
                       <div className="absolute top-full left-0 right-0 mt-1 text-xs text-center text-red-500">
                         Timeline invalid
@@ -271,6 +283,13 @@ const Markets: React.FC = () => {
             </div>
           </div>
 
+          <div className="bg-card rounded-lg shadow-md p-4">
+            <h2 className="text-xl font-semibold text-card-foreground mb-4">
+              Trade History
+            </h2>
+            <TradeHistoryTable trades={tradeHistory} />
+          </div>
+
           <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-4">
             <p className="text-sm text-indigo-700 dark:text-indigo-300">
               Trading on a conditional timeline means your trades only execute if that specific outcome occurs.
@@ -296,6 +315,7 @@ const Markets: React.FC = () => {
           onClose={() => {
             setIsTradeModalOpen(false);
             setSelectedOption(null);
+            loadTradeHistory(); // Reload trade history after closing modal
           }}
           initialSide={tradeAction}
           signer={signer}

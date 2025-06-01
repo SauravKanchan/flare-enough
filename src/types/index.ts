@@ -29,4 +29,16 @@ export type TradeType = {
   timestamp: string;
 };
 
+export type TradeHistoryType = {
+  id?: number;
+  eventId: string;
+  timeline: string;
+  type: 'call' | 'put';
+  side: 'buy' | 'sell';
+  strike: number;
+  premium: number;
+  amount: number;
+  timestamp: string;
+};
+
 export type ThemeType = 'light' | 'dark';
