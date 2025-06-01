@@ -9,6 +9,7 @@ import * as TemporaryClearingHouseABI from '../../config/TemporaryClearingHouse.
 import { CONTRACTS } from '../../config/index';
 import { useNotification } from "@blockscout/app-sdk";
 
+
 type TradeModalProps = {
   option: OptionType;
   isOpen: boolean;
@@ -122,12 +123,10 @@ const TradeModal: React.FC<TradeModalProps> = ({
             <h3 className="text-xl font-semibold text-foreground">
               Trade {option.type.toUpperCase()} Option at ${option.strike.toLocaleString()}
             </h3>
-            {!option.resolved && (
-              <div className="flex items-center mt-2 text-sm text-amber-600 dark:text-amber-400">
-                <AlertTriangle size={16} className="mr-1" />
-                <span>Only executes if {option.timeline} occurs</span>
-              </div>
-            )}
+            <div className="flex items-center mt-2 text-sm text-amber-600 dark:text-amber-400">
+              <AlertTriangle size={16} className="mr-1" />
+              <span>Only executes if {option.timeline} occurs</span>
+            </div>
           </div>
           <button
             onClick={onClose}
