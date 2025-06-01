@@ -56,3 +56,18 @@ git clone https://github.com/SauravKanchan/flare-enough.git
 cd flare-enough
 npm install
 npm run dev
+```
+
+## ⚠️ Assumptions
+
+This is an early-stage prototype of FlareEnough. The following assumptions have been made to simplify development and demonstrate core functionality:
+
+1. **Mocked Event Data**  
+   Event outcomes are currently provided by a mock server instead of real-time oracle data from Flare FDC.
+
+2. **Hardcoded Option Seller**  
+   To avoid the complexity of matching orders or building an AMM, the seller is hardcoded for now.
+
+3. **Simulated Order Book**  
+   The option market displays hardcoded strike prices and simulates buyer/seller presence. This is due to the absence of active market participants.  
+   > ⚠️ **Note**: The **actual logic for buying and selling options is fully implemented**—only the display is simulated for better UX.
