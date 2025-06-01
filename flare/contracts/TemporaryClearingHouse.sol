@@ -21,7 +21,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         address buyer;
         address seller;
         uint256 strikePriceUSDC;
-        uint256 quantityXrp;
+        uint256 quantityBtc;
         uint256 expiry;
         bool exercised;
         bool destroyed;
@@ -117,28 +117,28 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         uint256 premiumUSDC,
         address seller,
         uint256 strikePriceUSDC,
-        uint256 quantityXrp,
+        uint256 quantityBtc,
         uint256 expiry
     ) public pending {
         // Deposit USDC before minting the option
         depositUsdc(premiumUSDC);
 
         // Mint the call option
-        mintCallOption(premiumUSDC, seller, strikePriceUSDC, quantityXrp, expiry);
+        mintCallOption(premiumUSDC, seller, strikePriceUSDC, quantityBtc, expiry);
     }
 
     function depositAndMintPut(
         uint256 premiumUSDC,
         address seller,
         uint256 strikePriceUSDC,
-        uint256 quantityXrp,
+        uint256 quantityBtc,
         uint256 expiry
     ) public pending {
         // Deposit USDC before minting the option
         depositUsdc(premiumUSDC);
 
         // Mint the put option
-        mintPutOption(premiumUSDC, seller, strikePriceUSDC, quantityXrp, expiry);
+        mintPutOption(premiumUSDC, seller, strikePriceUSDC, quantityBtc, expiry);
     }
 
 
@@ -147,7 +147,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         uint256 premiumUSDC,
         address seller,
         uint256 strikePriceUSDC,
-        uint256 quantityXrp,
+        uint256 quantityBtc,
         uint256 expiry
     ) public pending {
         address buyer = msg.sender;
@@ -161,7 +161,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
 
 
         // Seller underwrites the option
-        uint256 valueUSDC = quantityXrp * strikePriceUSDC / one_xrp();
+        uint256 valueUSDC = quantityBtc * strikePriceUSDC / one_btc();
         require(virtualBalances[seller] >= valueUSDC, "Seller lacks collateral");
         virtualBalances[seller] -= valueUSDC;
 
@@ -170,7 +170,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
             buyer: msg.sender,
             seller: seller,
             strikePriceUSDC: strikePriceUSDC,
-            quantityXrp: quantityXrp,
+            quantityBtc: quantityBtc,
             expiry: expiry,
             exercised: false,
             destroyed: false
@@ -184,7 +184,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         uint256 premiumUSDC,
         address seller,
         uint256 strikePriceUSDC,
-        uint256 quantityXrp,
+        uint256 quantityBtc,
         uint256 expiry
     ) public notAborted {
         address buyer = msg.sender;
@@ -197,7 +197,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         virtualBalances[seller] += premiumUSDC;
 
         // Seller underwrites the option
-        uint256 valueUSDC = quantityXrp * strikePriceUSDC / one_xrp();
+        uint256 valueUSDC = quantityBtc * strikePriceUSDC / one_btc();
         require(virtualBalances[seller] >= valueUSDC, "Seller lacks collateral");
         virtualBalances[seller] -= valueUSDC;
 
@@ -206,7 +206,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
             buyer: msg.sender,
             seller: seller,
             strikePriceUSDC: strikePriceUSDC,
-            quantityXrp: quantityXrp,
+            quantityBtc: quantityBtc,
             expiry: expiry,
             exercised: false,
             destroyed: false
@@ -287,14 +287,14 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         require(!option.exercised, "Already exercised");
         require(block.timestamp <= option.expiry, "Option expired");
 
-        (uint256 currentPriceUSDC, int8 decimals, ) = getXrpPrice();
+        (uint256 currentPriceUSDC, int8 decimals, ) = getBtcPrice();
         require(decimals >= 0, "Invalid decimals");
 
         uint256 scaledStrike = option.strikePriceUSDC;
         uint256 scaledMarket = currentPriceUSDC;
 
         if (scaledMarket > scaledStrike) {
-            uint256 payoutUSDC = ((scaledMarket - scaledStrike) * option.quantityXrp) / (10 ** uint8(decimals));
+            uint256 payoutUSDC = ((scaledMarket - scaledStrike) * option.quantityBtc) / (10 ** uint8(decimals));
             require(virtualBalances[option.seller] >= payoutUSDC, "Seller lacks funds");
             virtualBalances[option.seller] -= payoutUSDC;
             virtualBalances[option.buyer] += payoutUSDC;
@@ -313,15 +313,14 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
         require(!option.exercised, "Already exercised");
         require(block.timestamp <= option.expiry, "Option expired");
 
-        (uint256 currentPriceUSDC, int8 decimals, ) = getXrpPrice();
-        // assert(XRP == 10**uint8(decimals));
+        (uint256 currentPriceUSDC, int8 decimals, ) = getBtcPrice();
         require(decimals >= 0, "Invalid decimals");
 
         uint256 scaledStrike = option.strikePriceUSDC;
         uint256 scaledMarket = currentPriceUSDC;
 
         if (scaledStrike > scaledMarket) {
-            uint256 payoutUSDC = ((scaledStrike - scaledMarket) * option.quantityXrp) / (10 ** uint8(decimals));
+            uint256 payoutUSDC = ((scaledStrike - scaledMarket) * option.quantityBtc) / (10 ** uint8(decimals));
             require(virtualBalances[option.seller] >= payoutUSDC, "Seller lacks funds");
             virtualBalances[option.seller] -= payoutUSDC;
             virtualBalances[option.buyer] += payoutUSDC;
@@ -343,7 +342,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
 
         option.destroyed = true;
         // Return the collateral to the seller
-        virtualBalances[option.seller] += option.quantityXrp * option.strikePriceUSDC / one_xrp();
+        virtualBalances[option.seller] += option.quantityBtc * option.strikePriceUSDC / one_btc();
     }
 
     function destroyPutOption(uint256 optionId) public notAborted {
@@ -357,7 +356,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
 
         option.destroyed = true;
         // Return the collateral to the seller
-        virtualBalances[option.seller] += option.quantityXrp * option.strikePriceUSDC / one_xrp();
+        virtualBalances[option.seller] += option.quantityBtc * option.strikePriceUSDC / one_btc();
     }
 
     // Performed by Factory
@@ -408,7 +407,7 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
     }
 
 
-    function getXrpPrice()
+    function getBtcPrice()
         public
         view
         returns (
@@ -417,27 +416,28 @@ contract TemporaryClearingHouse is ITemporaryClearingHouse, AccessControl, Reent
             uint64 timestamp
         )
     {
-        if (testXrpPrice > 0) {
-            return (testXrpPrice, testXrpDecimals, uint64(block.timestamp));
+        if (testBtcPrice > 0) {
+            return (testBtcPrice, testBtcDecimals, uint64(block.timestamp));
         } else {
             TestFtsoV2Interface ftsoV2 = ContractRegistry.getTestFtsoV2();
             // https://dev.flare.network/ftso/feeds/
-            bytes21 xrp_id = 0x015852502f55534400000000000000000000000000;
-            return ftsoV2.getFeedById(xrp_id);
+            // bytes21 xrp_id = 0x015852502f55534400000000000000000000000000;
+            bytes21 btc_id = 0x014254432f55534400000000000000000000000000;
+            return ftsoV2.getFeedById(btc_id);
         }
     }
 
     // Mock price feed for XRP
-    uint256 public testXrpPrice;
-    int8 public testXrpDecimals;
+    uint256 public testBtcPrice;
+    int8 public testBtcDecimals;
     
-    function setTestXrpPrice(uint256 price, int8 decimals) public {
-        testXrpPrice = price;
-        testXrpDecimals = decimals;
+    function setTestBtcPrice(uint256 price, int8 decimals) public {
+        testBtcPrice = price;
+        testBtcDecimals = decimals;
     }
 
-    function one_xrp() public view returns (uint256) {
-        (, int8 decimals, ) = getXrpPrice();
+    function one_btc() public view returns (uint256) {
+        (, int8 decimals, ) = getBtcPrice();
         return 10 ** uint8(decimals);
     }
 }
