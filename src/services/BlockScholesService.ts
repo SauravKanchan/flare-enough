@@ -1,5 +1,3 @@
-import { BLOCKSCHOLES_API_KEY } from '../config';
-
 type BlockScholesResponse = {
   data: Array<{
     values: Array<{
