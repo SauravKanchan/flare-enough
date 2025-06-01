@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 import Button from './Button';
 import { OptionType } from '../../types';
 import { ethers } from 'ethers';
@@ -42,19 +42,6 @@ const TradeModal: React.FC<TradeModalProps> = ({
 
     setIsLoading(true);
     try {
-      // Here you would implement the actual trading logic using the signer
-      // For example:
-      // const contract = new ethers.Contract(CONTRACTS.FLARE_ENOUGH, FlareEnoughABI, signer);
-      // const tx = await contract.tradeOption(
-      //   option.eventId,
-      //   option.timeline,
-      //   option.strike,
-      //   option.type,
-      //   side,
-      //   amount,
-      //   { value: total }
-      // );
-      // await tx.wait();
       const USDC = new ethers.Contract(
         CONTRACTS.TEST_USDC,
         TestUSDCABI.abi,
@@ -110,7 +97,6 @@ const TradeModal: React.FC<TradeModalProps> = ({
       await depositAndMintTx.wait();
       openTxToast("114", depositAndMintTx.hash);
 
-
       console.log('Trade executed:', {
         eventId: option.eventId,
         timeline: option.timeline,
@@ -132,10 +118,16 @@ const TradeModal: React.FC<TradeModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-background rounded-lg shadow-xl w-full max-w-md p-6 m-4">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-foreground">
-            Trade {option.type.toUpperCase()} Option at ${option.strike.toLocaleString()}
-          </h3>
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h3 className="text-xl font-semibold text-foreground">
+              Trade {option.type.toUpperCase()} Option at ${option.strike.toLocaleString()}
+            </h3>
+            <div className="flex items-center mt-2 text-sm text-amber-600 dark:text-amber-400">
+              <AlertTriangle size={16} className="mr-1" />
+              <span>Only executes if {option.timeline} occurs</span>
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors"
