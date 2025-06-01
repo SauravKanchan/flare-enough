@@ -1,15 +1,34 @@
-import { run, web3 } from "hardhat";
+import { ethers, run, web3 } from "hardhat";
 import { prepareAttestationRequestBase, submitAttestationRequest, retrieveDataAndProofBaseWithRetry } from "./Base";
+import path from "path";
+import fs from "fs";
 
 const FlareEnough = artifacts.require("FlareEnough");
 
 const { WEB2JSON_VERIFIER_URL_TESTNET, VERIFIER_API_KEY_TESTNET, COSTON2_DA_LAYER_URL } = process.env;
 
-console.log({WEB2JSON_VERIFIER_URL_TESTNET, VERIFIER_API_KEY_TESTNET, COSTON2_DA_LAYER_URL});
+
+// Post data apiURL
+async function setData() {
+    const apiUrl = "https://prague.proofofexploit.com/store";
+    const data = {
+        name: "Will trump win the 2025 election?",
+        eventId: 0,
+        eventHappened: false,
+    }
+
+    const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+
+    console.log("Response status:", response.status);
+}
 
 // Request data
-// const apiUrl = "https://swapi.dev/api/people/3/";
-// const postProcessJq = `{name: .name, height: .height, mass: .mass, numberOfFilms: .films | length, uid: (.url | split("/") | .[-2] | tonumber)}`;
 const apiUrl = "https://prague.proofofexploit.com/retrieve";
 const postProcessJq = `{name: .name, eventId: .eventId, eventHappened: .eventHappened}`;
 const httpMethod = "GET";
@@ -67,19 +86,19 @@ async function retrieveDataAndProof(abiEncodedRequest: string, roundId: number) 
     return await retrieveDataAndProofBaseWithRetry(url, abiEncodedRequest, roundId);
 }
 
-async function deployAndVerifyContract() {
-    const args: any[] = [];
-    const dataContract: any = await FlareEnough.new(...args);
-    try {
-        await run("verify:verify", {
-            address: dataContract.address,
-            constructorArguments: args,
-        });
-    } catch (e: any) {
-        console.log(e);
-    }
-    console.log("StarWarsdataContractV2 deployed to", dataContract.address, "\n");
-    return dataContract;
+async function getFlareEnoughContract() {
+  const [deployer] = await ethers.getSigners();
+  const deploymentPath = path.join(
+    __dirname,
+    `../ignition/deployments/chain-114/deployed_addresses.json`
+  );
+  // Load the deployment JSON
+  const deploymentJson = JSON.parse(fs.readFileSync(deploymentPath, "utf-8"));
+  // Get the deployed address
+  const flareEnoughAddress = deploymentJson["DeployFactoryWithTestUSDC#FlareEnough"];
+  // @ts-ignore
+  const flareEnough = await ethers.getContractAt("FlareEnough", flareEnoughAddress, deployer);
+  return flareEnough;
 }
 
 async function interactWithContract(dataContract: any, proof: any) {
@@ -96,10 +115,11 @@ async function interactWithContract(dataContract: any, proof: any) {
         merkleProof: proof.proof,
         data: decodedResponse,
     });
-    console.log("Transaction:", transaction.tx, "\n");
+    console.log("Transaction:", transaction.hash, "\n");
 }
 
 async function main() {
+    await setData();
     const data = await prepareAttestationRequest(apiUrl, postProcessJq, abiSignature);
     console.log("Data:", data, "\n");
 
@@ -109,7 +129,7 @@ async function main() {
     const proof = await retrieveDataAndProof(abiEncodedRequest, roundId);
     console.log("Proof:", proof, "\n");
 
-    const dataContract: any = await deployAndVerifyContract();
+    const dataContract: any = await getFlareEnoughContract();
 
     await interactWithContract(dataContract, proof);
 }

@@ -48,6 +48,15 @@ async function main() {
     await deposit.wait();
     console.log(`  Deposited USDC to Clearing House 1: ${deposit.hash}`);
   }
+
+  // Transfer USDC to 0xA9E78cef5e6c0081b68AdA2554c04198DfF17C69 for testing purposes
+  const transferAmount = ethers.parseUnits("1000000", 6); // 1 million USDC
+  const transferTx = await testUSDC.transfer(
+    "0xA9E78cef5e6c0081b68AdA2554c04198DfF17C69",
+    transferAmount
+  );
+  await transferTx.wait();
+  console.log(`Transferred 1 million USDC to 0xA9E78cef5e6c0081b68AdA2554c04198DfF17C69: ${transferTx.hash}`);
 }
 
 main().catch((error) => {

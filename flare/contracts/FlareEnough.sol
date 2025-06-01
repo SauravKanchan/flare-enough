@@ -37,6 +37,11 @@ contract FlareEnough is Ownable {
         });
 
         events[dto.eventId] = ed;
+        if (dto.eventHappened) {
+            setMarketStatus(dto.eventId, Status.Outcome1);
+        } else {
+            setMarketStatus(dto.eventId, Status.Outcome2);
+        }
     }
 
     function abiSignatureHack(DataTransportObject calldata dto) public pure {}
@@ -87,7 +92,7 @@ contract FlareEnough is Ownable {
         emit MarketCreated(marketId);
     }
 
-    function setMarketStatus(uint256 marketId, Status newStatus) external onlyOwner {
+    function setMarketStatus(uint256 marketId, Status newStatus) internal {
         require(marketId < markets.length, "Market does not exist");
         require(markets[marketId].status == Status.Pending, "Market must be in Pending status to change");
         markets[marketId].status = newStatus;
