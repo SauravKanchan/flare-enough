@@ -52,6 +52,7 @@ export async function getOptionPrice(strike: number, type: 'C' | 'P'): Promise<n
     return data.data[0].values[0].v;
   } catch (error) {
     console.error('Error fetching option price:', error);
-    return 0;
+    // Return 0.8% of strike price as fallback premium
+    return strike * 0.008;
   }
 }
