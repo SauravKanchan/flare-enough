@@ -271,23 +271,23 @@ const MarketCard: React.FC<MarketCardProps> = ({
   onTimelineClick
 }) => {
   return (
-    <Card hover className="overflow-hidden">
+    <Card hover className="h-[320px] flex flex-col overflow-hidden">
       <div className="h-2 bg-gradient-to-r from-black to-gray-800"></div>
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
           {active && (
-            <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs rounded-full font-medium">
+            <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs rounded-full font-medium flex-shrink-0 ml-2">
               Active
             </span>
           )}
         </div>
-        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">{description}</p>
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">{description}</p>
         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
-          <Clock size={16} className="mr-2" />
+          <Clock size={16} className="mr-2 flex-shrink-0" />
           <span>Event date: {date}</span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="mt-auto grid grid-cols-2 gap-3">
           {timelines.map((timeline, index) => (
             <Button 
               key={index}
