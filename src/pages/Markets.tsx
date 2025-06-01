@@ -55,6 +55,21 @@ const Markets: React.FC = () => {
       setIsTradeModalOpen(true);
     } catch (error) {
       console.error('Error fetching option premium:', error);
+      // Return 0.8% of strike price as fallback premium
+      const fallbackPremium = strike * 0.008;
+      const option: OptionType = {
+        id: `${type}-${strike}`,
+        eventId: selectedEvent?.id || '',
+        timeline: selectedTimeline || '',
+        strike: strike,
+        premium: fallbackPremium,
+        expiryDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+        type: type,
+        collateral: strike * 0.1,
+        description: `${type.toUpperCase()} option at strike $${strike.toLocaleString()}`
+      };
+      setSelectedOption(option);
+      setIsTradeModalOpen(true);
     }
   };
 
@@ -139,10 +154,10 @@ const Markets: React.FC = () => {
                       disabled={isLosingTimeline}
                     >
                       {getTimelineLabel(timeline)}
+                      {isWinningTimeline && (
+                        <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
+                      )}
                     </Button>
-                    {isWinningTimeline && (
-                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
-                    )}
                     {isLosingTimeline && (
                       <div className="absolute top-full left-0 right-0 mt-1 text-xs text-center text-red-500">
                         Timeline invalid
